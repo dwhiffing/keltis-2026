@@ -34,7 +34,7 @@ function App() {
 					<div className="absolute inset-0 flex justify-center items-center">
 						<Pile pileIndex={0} pileType="deck" />
 					</div>
-					<div className="absolute top-0 inset-x-0 transform -translate-y-1/2 flex justify-center items-center">
+					<div className="absolute top-0 inset-x-0 transform -translate-y-2/5 flex justify-center items-center">
 						<Pile pileIndex={1} pileType="hand" />
 					</div>
 
@@ -66,7 +66,7 @@ function App() {
 						</div>
 					</div>
 
-					<div className="absolute bottom-0 inset-x-0 transform translate-y-1/2 flex justify-center items-center">
+					<div className="absolute bottom-0 inset-x-0 transform translate-y-2/5 flex justify-center items-center">
 						<Pile pileIndex={2 + suitCount * 3} pileType="hand" />
 					</div>
 				</div>

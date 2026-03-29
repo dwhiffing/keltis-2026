@@ -125,7 +125,8 @@ const getShallowCardState =
 			cardPileIndex,
 			suit,
 			rank,
-			transitionDelay: state.dealPhase === 1 ? card.id * 150 : 0,
+			transitionDelay:
+				state.dealPhase === 1 ? card.id * (CARD_TRANSITION_DURATION / 2) : 0,
 		};
 	};
 

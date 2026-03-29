@@ -161,8 +161,8 @@
     pointer-events: auto;
     inset: calc(var(--base-gap) * 0);
   }
-  .pile.tableau::before {
+  /* .pile.tableau::before {
     inset: calc(var(--base-gap) * 0) calc(var(--base-gap) * 0)
       calc(var(--base-gap) * -20);
-  }
+  } */
 }
