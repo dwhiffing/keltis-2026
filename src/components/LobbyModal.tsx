@@ -94,6 +94,25 @@ export function LobbyModal() {
           </div>
         )}
 
+        {lobbyPhase === 'connecting' && (
+          <div className="flex flex-col gap-4 items-center">
+            <p className="text-center text-sm opacity-70">Connecting…</p>
+            <div className="text-5xl font-mono font-bold tracking-widest text-primary">
+              {inputCode}
+            </div>
+            <button
+              className="w-full py-2 px-4 rounded bg-on-surface text-white"
+              onClick={() => {
+                useMultiplayerStore.setState({
+                  lobbyPhase: 'joining',
+                  error: null,
+                })
+              }}>
+              Cancel
+            </button>
+          </div>
+        )}
+
         {error && lobbyPhase !== 'joining' && (
           <p className="text-red-400 text-sm text-center">{error}</p>
         )}

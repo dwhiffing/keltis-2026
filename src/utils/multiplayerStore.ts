@@ -68,7 +68,7 @@ type PeerMessage =
   | { type: 'game-start'; seed: number }
   | { type: 'move'; move: MoveData }
 
-export type LobbyPhase = 'menu' | 'hosting' | 'joining'
+export type LobbyPhase = 'menu' | 'hosting' | 'joining' | 'connecting'
 
 export interface MultiplayerState {
   mode: 'ai' | 'multiplayer'
@@ -211,6 +211,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
     peer = new Peer(buildPeerConfig())
 
     peer.on('open', () => {
+      set({ lobbyPhase: 'connecting' })
       conn = peer!.connect(peerIdFromCode(code), { reliable: true })
 
       conn.on('data', (raw) => {
@@ -240,7 +241,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
 
     peer.on('error', (err) => {
       const msg = (err as Error).message ?? String(err)
-      set({ error: `Error: ${msg}`, lobbyPhase: 'menu' })
+      set({ error: `Error: ${msg}`, lobbyPhase: 'joining' })
     })
   },
 

@@ -137,7 +137,7 @@ export default memo(Card)
 
 const _CardFront = ({ suit, rank }: { suit: Suit; rank: Rank }) => {
   const isNeutral = suit === NEUTRAL_SUIT
-  const color = isNeutral ? '#222' : SUIT_COLORS[suit]
+  const color = isNeutral ? '#2c3e50' : SUIT_COLORS[suit]
   const suitName = isNeutral ? 'neutral' : SUIT_NAMES[suit]
   const rankLabel = rank === 10 ? 'X' : rank
 
