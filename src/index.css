@@ -56,7 +56,8 @@
     --card-pile-label-size: calc(var(--base-size) * 0.4);
   }
 
-  html, body {
+  html,
+  body {
     height: 100dvh;
     overflow: hidden;
     user-select: none;
@@ -91,7 +92,7 @@
   .card,
   .pile,
   .card-front,
-  .card-back{
+  .card-back {
     border-radius: calc(var(--base-size) * 0.05);
   }
 
@@ -142,16 +143,18 @@
     gap: calc(var(--base-gap));
   }
 
-  .pile.tableau, .pile.discard {
+  .pile.tableau,
+  .pile.discard {
     @apply border-[0.15vw] border-surface-pile-border bg-surface-pile relative pointer-events-none;
   }
 
-  .pile.deck, .pile.hand {
+  .pile.deck,
+  .pile.hand {
     @apply invisible;
   }
   .pile.deck p {
-    font-size: calc(var(--base-size) * .3) ;
-    -webkit-text-stroke: calc(var(--base-size) * .08)  #e74c3c;
+    font-size: calc(var(--base-size) * 0.3);
+    -webkit-text-stroke: calc(var(--base-size) * 0.08) #e74c3c;
     paint-order: stroke fill;
     @apply visible;
     pointer-events: none;
