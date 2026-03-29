@@ -18,6 +18,7 @@ interface CardShallowState {
 	isDragging: boolean;
 	pileType: string;
 	isFaceDown: boolean;
+	isVisible: boolean;
 	cardPileIndex: number;
 	suit: Suit;
 	rank: Rank;

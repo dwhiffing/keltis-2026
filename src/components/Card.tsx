@@ -48,19 +48,19 @@ const Card = ({ cardId }: { cardId: number }) => {
 		store.cardPileIndex === 0
 			? "0 0 5px rgba(0, 0, 0, 0.25)"
 			: "none";
-	const transitionDuration = CARD_TRANSITION_DURATION + "ms";
 	const transitionTimingFunction = "cubic-bezier(0.4, 0, 0.6, 1)";
-	const transitionProperty = !hasMounted
-		? "none"
-		: store.isActive
-			? "scale, rotate"
-			: "scale, translate, rotate, box-shadow";
-	const transitionDelay = `${store.transitionDelay}ms`;
+	const transitionProperty = "translate, rotate, scale, opacity, box-shadow";
+	const delay = store.transitionDelay;
+	const dur = hasMounted ? CARD_TRANSITION_DURATION : 0;
+	const rotateDelay = store.isActive ? CARD_TRANSITION_DURATION : delay;
+	const translateDur = store.isActive ? 0 : dur;
+	const transitionDuration = `${translateDur}ms, ${dur}ms, ${dur}ms, ${dur}ms, ${dur}ms`;
+	const transitionDelay = `${delay}ms, ${rotateDelay}ms, ${delay}ms, ${delay}ms, ${delay}ms`;
 
 	return (
 		<div
-			data-id={cardId}
-			className={`card ${store.isFaceDown ? "face-down" : ""} ${store.isDragging ? "active" : "inactive"}`}
+			data-id={store.isVisible ? cardId : undefined}
+			className={`card ${store.isFaceDown ? "face-down" : ""} ${store.isDragging || !store.isVisible ? "active" : "inactive"}`}
 			style={{
 				zIndex,
 				scale: store.scale,
@@ -72,6 +72,7 @@ const Card = ({ cardId }: { cardId: number }) => {
 				translate,
 				boxShadow,
 				willChange: "transform",
+				opacity: store.isVisible ? 1 : 0,
 			}}
 		>
 			<CardFront suit={store.suit} rank={store.rank} />
@@ -98,7 +99,9 @@ const getShallowCardState =
 		const { width, height } = getPileSize();
 		const isActive = cardId === state.activeCard?.id;
 		const isShuffling = state.dealPhase === 0;
-		const isFaceDown = pileIndex === 0 || pileIndex === 1 || isShuffling;
+		const isInDeck = pileIndex === 0;
+		const isFaceDown = isInDeck || pileIndex === 1 || isShuffling;
+		const isVisible = !isInDeck || state.dealPhase !== -1;
 		const isDragging = isActive && pressed;
 
 		const deckX = window.innerWidth / 2 - width / 2;
@@ -118,6 +121,7 @@ const getShallowCardState =
 			isDragging,
 			pileType,
 			isFaceDown,
+			isVisible,
 			cardPileIndex,
 			suit,
 			rank,
