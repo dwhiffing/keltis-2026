@@ -32,7 +32,9 @@ jobs:
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
 
       - name: Deploy
-        run: pnpm run deploy
+        run: |
+          echo "TURN configured: $([ -n "$VITE_TURN_USERNAME" ] && echo yes || echo NO)"
+          pnpm run deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VITE_TURN_USERNAME: ${{ secrets.VITE_TURN_USERNAME }}
