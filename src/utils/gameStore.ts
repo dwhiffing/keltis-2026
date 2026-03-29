@@ -79,20 +79,20 @@ export const useGameStore = create<GameStore>((set, get) => {
 
   setTimeout(() => newGame(), 0)
 
-  // if (
-  // 	window.matchMedia("(any-pointer: coarse)").matches &&
-  // 	!window.matchMedia("(display-mode: fullscreen), (display-mode: standalone)")
-  // 		.matches
-  // ) {
-  // 	document.addEventListener("click", () => {
-  // 		if (!document.fullscreenElement)
-  // 			document.documentElement
-  // 				.requestFullscreen({ navigationUI: "hide" })
-  // 				.then(() =>
-  // 					(screen.orientation as any).lock("portrait").catch(() => {}),
-  // 				);
-  // 	});
-  // }
+  if (
+    window.matchMedia('(any-pointer: coarse)').matches &&
+    !window.matchMedia('(display-mode: fullscreen), (display-mode: standalone)')
+      .matches
+  ) {
+    document.addEventListener('click', () => {
+      if (!document.fullscreenElement)
+        document.documentElement
+          .requestFullscreen({ navigationUI: 'hide' })
+          .then(() =>
+            (screen.orientation as any).lock('portrait').catch(() => {}),
+          )
+    })
+  }
 
   if (!hasSeenInstructions) {
     localStorage.setItem('hasSeenInstructions', 'true')
