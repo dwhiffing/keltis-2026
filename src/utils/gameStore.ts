@@ -19,6 +19,8 @@ export interface GameState {
 	currentPlayerIndex: 0 | 1;
 	turnPhase: 0 | 1; // 0 = play a card, 1 = draw a card
 	lastPlayedPileIndex: number | null;
+	turnsUntilEnd: number | null; // null = deck not yet empty; counts down from 2 after last deck draw
+	gameOver: boolean;
 	showInstructionsModal: boolean;
 }
 
@@ -91,7 +93,7 @@ export const useGameStore = create<GameStore>((set, get) => {
 
 		newGame,
 		onMouseDown: ({ clientX, clientY }: MouseParams) => {
-			if (get().currentPlayerIndex !== 0) return;
+			if (get().currentPlayerIndex !== 0 || get().gameOver) return;
 			const { activeCard, cards, turnPhase } = get();
 
 			// Draw phase: player must pick a pile to draw from
@@ -206,6 +208,8 @@ function initializeGameState(): Omit<GameState, "cards"> {
 		currentPlayerIndex: 0,
 		turnPhase: 0,
 		lastPlayedPileIndex: null,
+		turnsUntilEnd: null,
+		gameOver: false,
 		showInstructionsModal: false,
 	};
 }
@@ -293,7 +297,8 @@ const aiTakeTurn = (
 	get: () => GameStore,
 	set: (state: Partial<GameStore>) => void,
 ) => {
-	const { cards, turnPhase } = get();
+	const { cards, turnPhase, gameOver } = get();
+	if (gameOver) return;
 	const s = NUM_SUITS;
 	const opponentHandPile = 1;
 
@@ -348,14 +353,25 @@ const drawIntoHand = (
 		if (newIdx === -1) return card;
 		return { ...card, pileIndex: handPileIndex, cardPileIndex: newIdx };
 	});
+
+	const drewFromDeck = deckTopCard.pileIndex === 0;
+	const deckNowEmpty = getCardPile(0, updatedCards).length === 0;
+	const prevTurnsUntilEnd = get().turnsUntilEnd;
+	let turnsUntilEnd: number | null = prevTurnsUntilEnd;
+	if (drewFromDeck && deckNowEmpty && turnsUntilEnd === null) {
+		turnsUntilEnd = 4;
+	} else if (turnsUntilEnd !== null) {
+		turnsUntilEnd = turnsUntilEnd - 1;
+	}
+	const gameOver = turnsUntilEnd === 0;
+
 	set({
 		currentPlayerIndex: nextPlayerIndex,
 		lastPlayedPileIndex: null,
+		turnsUntilEnd,
+		gameOver,
 		cards: updatedCards,
 	});
-	console.log(
-		`Turn end — Player 0: ${getScore(0, updatedCards)}, Player 1: ${getScore(1, updatedCards)}`,
-	);
 };
 
 const PILE_SCORE = [0, -4, -3, -2, 1, 2, 3, 6, 7, 10];
@@ -363,7 +379,7 @@ const PILE_SCORE = [0, -4, -3, -2, 1, 2, 3, 6, 7, 10];
 const getPileScore = (length: number): number =>
 	PILE_SCORE[Math.min(length, PILE_SCORE.length - 1)];
 
-const getScore = (playerIndex: 0 | 1, cards: CardType[]): number => {
+export const getScore = (playerIndex: 0 | 1, cards: CardType[]): number => {
 	const s = NUM_SUITS;
 	const tableauStart = playerIndex === 0 ? 2 + s + NUM_DISCARD_PILES : 2;
 	return Array.from({ length: s }, (_, i) =>

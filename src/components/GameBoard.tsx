@@ -6,6 +6,7 @@ import { useGameStore } from "../utils/gameStore";
 import Card from "./Card";
 import { Header } from "./Header";
 import { InstructionsModal } from "./InstructionsModal";
+import { GameOverModal } from "./GameOverModal";
 import { Pile } from "./Pile";
 
 function App() {
@@ -91,6 +92,7 @@ function App() {
 			</div>
 
 			<InstructionsModal />
+			<GameOverModal />
 		</div>
 	);
 }

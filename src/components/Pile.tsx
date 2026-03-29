@@ -21,7 +21,9 @@ export const Pile = ({
 			data-piletype={pileType}
 		>
 			{pileType === "deck" && (
-				<p className="relative z-1000 text-white font-bold">
+				<p
+					className={`relative z-1000 text-white font-bold ${state.deckCount === 0 ? "opacity-0" : ""} transition-opacity`}
+				>
 					{state.deckCount}
 				</p>
 			)}
