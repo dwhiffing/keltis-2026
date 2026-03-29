@@ -3,38 +3,14 @@ import { useMultiplayerStore } from '../utils/multiplayerStore'
 import { Modal } from './Modal'
 
 export function LobbyModal() {
-  const {
-    showLobbyModal,
-    lobbyPhase,
-    gameCode,
-    error,
-    closeLobby,
-    hostGame,
-    joinGame,
-  } = useMultiplayerStore()
+  const { showLobbyModal, lobbyPhase, gameCode, error, closeLobby, joinGame } =
+    useMultiplayerStore()
   const [inputCode, setInputCode] = useState('')
 
   return (
     <Modal show={showLobbyModal} onClose={closeLobby}>
       <div className="flex flex-col gap-6 bg-surface rounded-lg shadow-xl w-[calc(100vw-40px)] min-w-72 max-w-sm p-6">
         <h2 className="text-2xl font-bold text-center">Multiplayer</h2>
-
-        {lobbyPhase === 'menu' && (
-          <div className="flex flex-col gap-3">
-            <button
-              className="w-full py-2 px-4 rounded bg-primary text-white font-bold"
-              onClick={hostGame}>
-              Create Game
-            </button>
-            <button
-              className="w-full py-2 px-4 rounded bg-on-surface text-white font-bold"
-              onClick={() =>
-                useMultiplayerStore.setState({ lobbyPhase: 'joining' })
-              }>
-              Join Game
-            </button>
-          </div>
-        )}
 
         {lobbyPhase === 'hosting' && (
           <div className="flex flex-col gap-4 items-center">
@@ -87,13 +63,8 @@ export function LobbyModal() {
             </button>
             <button
               className="w-full py-2 px-4 rounded bg-on-surface text-white"
-              onClick={() =>
-                useMultiplayerStore.setState({
-                  lobbyPhase: 'menu',
-                  error: null,
-                })
-              }>
-              Back
+              onClick={closeLobby}>
+              Cancel
             </button>
           </div>
         )}

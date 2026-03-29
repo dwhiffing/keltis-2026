@@ -68,7 +68,7 @@ export function isTurnConfigured(): boolean {
   return !!(turnUsername && turnCredential && !getTurnConfigError())
 }
 
-export type LobbyPhase = 'menu' | 'hosting' | 'joining' | 'connecting'
+export type LobbyPhase = 'hosting' | 'joining' | 'connecting'
 
 export interface MultiplayerState {
   mode: 'ai' | 'multiplayer'
@@ -80,7 +80,7 @@ export interface MultiplayerState {
 }
 
 interface MultiplayerStore extends MultiplayerState {
-  openLobby: () => void
+  openLobby: (phase: Exclude<LobbyPhase, 'connecting'>) => void
   closeLobby: () => void
   hostGame: () => void
   joinGame: (code: string) => void
@@ -128,15 +128,15 @@ function handleConnClose() {
 export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
   mode: 'ai',
   showLobbyModal: false,
-  lobbyPhase: 'menu',
+  lobbyPhase: 'joining' as LobbyPhase,
   gameCode: null,
   peerConnected: false,
   error: null,
 
-  openLobby: () =>
+  openLobby: (phase: Exclude<LobbyPhase, 'connecting'>) =>
     set({
       showLobbyModal: true,
-      lobbyPhase: 'menu',
+      lobbyPhase: phase,
       error: getTurnConfigError(),
     }),
 
@@ -195,7 +195,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
         // Code collision — retry with a new code
         get().hostGame()
       } else {
-        set({ error: `Error: ${msg}`, lobbyPhase: 'menu' })
+        set({ error: `Error: ${msg}`, lobbyPhase: 'joining' })
       }
     })
   },
@@ -257,7 +257,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       mode: 'ai',
       peerConnected: false,
       gameCode: null,
-      lobbyPhase: 'menu',
+      lobbyPhase: 'joining' as LobbyPhase,
     })
   },
 }))

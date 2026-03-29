@@ -33,22 +33,36 @@ export function Header() {
           label={<HamburgerSVG />}
           items={[
             {
-              label: 'New Game (vs AI)',
+              label: 'Host Game',
               onClick: () => {
                 if (mode === 'multiplayer') disconnect()
-                newGame()
+                openLobby('hosting')
+                useMultiplayerStore.getState().hostGame()
               },
             },
             {
-              label:
-                mode === 'multiplayer' ? 'Leave Multiplayer' : 'Multiplayer',
+              label: 'Join Game',
               onClick: () => {
-                if (mode === 'multiplayer') {
-                  disconnect()
-                  newGame()
-                } else {
-                  openLobby()
-                }
+                if (mode === 'multiplayer') disconnect()
+                openLobby('joining')
+              },
+            },
+            ...(mode === 'multiplayer'
+              ? [
+                  {
+                    label: 'Leave Multiplayer',
+                    onClick: () => {
+                      disconnect()
+                      newGame()
+                    },
+                  },
+                ]
+              : []),
+            {
+              label: 'Local Game vs AI',
+              onClick: () => {
+                if (mode === 'multiplayer') disconnect()
+                newGame()
               },
             },
           ]}
