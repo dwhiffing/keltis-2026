@@ -24,8 +24,8 @@ export default defineConfig({
         background_color: '#45a173',
         display: 'fullscreen',
         orientation: 'portrait',
-        start_url: '/keltis/?fullscreen=true',
-        scope: '/keltis/',
+        start_url: '/keltis-2026/?fullscreen=true',
+        scope: '/keltis-2026/',
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -50,5 +50,5 @@ export default defineConfig({
       },
     }),
   ],
-  base: '/keltis/',
+  base: '/keltis-2026/',
 })
