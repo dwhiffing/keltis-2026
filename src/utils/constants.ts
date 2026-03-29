@@ -8,7 +8,7 @@ export const SUIT_COLORS: string[] = [
   '#9a54ae',
   '#e28d26',
 ]
-export const SUIT_NAMES: string[] = ['fire', 'water', 'leaf']
+export const SUIT_NAMES: string[] = ['fire', 'water', 'leaf', 'moon', 'star']
 export const NUM_SUITS = SUIT_NAMES.length
 export const NUM_DISCARD_PILES = 4
 
