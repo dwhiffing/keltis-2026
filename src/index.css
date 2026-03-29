@@ -146,6 +146,10 @@
     @apply border-[0.15vw] border-surface-pile-border bg-surface-pile relative pointer-events-none;
   }
 
+  .pile.hand, .pile.deck {
+    @apply invisible;
+  }
+
   .card {
     @apply absolute pointer-events-none;
   }
