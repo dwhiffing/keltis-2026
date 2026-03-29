@@ -23,30 +23,30 @@ function getTurnConfigError(): string | null {
 }
 
 function buildPeerConfig(): PeerOptions {
-  const { turnUsername, turnCredential } = readTurnConfig()
+  // const { turnUsername, turnCredential } = readTurnConfig()
   const iceServers: RTCIceServer[] = [
     {
       urls: 'stun:stun.relay.metered.ca:80',
     },
     {
       urls: 'turn:global.relay.metered.ca:80',
-      username: turnUsername,
-      credential: turnCredential,
+      username: '97df7336285a5523e8c0c17d',
+      credential: 'QhMvwKEwNjvZ49OD',
     },
     {
       urls: 'turn:global.relay.metered.ca:80?transport=tcp',
-      username: turnUsername,
-      credential: turnCredential,
+      username: '97df7336285a5523e8c0c17d',
+      credential: 'QhMvwKEwNjvZ49OD',
     },
     {
       urls: 'turn:global.relay.metered.ca:443',
-      username: turnUsername,
-      credential: turnCredential,
+      username: '97df7336285a5523e8c0c17d',
+      credential: 'QhMvwKEwNjvZ49OD',
     },
     {
       urls: 'turns:global.relay.metered.ca:443?transport=tcp',
-      username: turnUsername,
-      credential: turnCredential,
+      username: '97df7336285a5523e8c0c17d',
+      credential: 'QhMvwKEwNjvZ49OD',
     },
   ]
 
