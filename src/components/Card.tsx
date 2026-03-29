@@ -101,7 +101,6 @@ const getShallowCardState =
 		const isShuffling = state.dealPhase === 0;
 		const isInDeck = pileIndex === 0;
 		const isFaceDown = isInDeck || pileIndex === 1 || isShuffling;
-		const isVisible = !isInDeck || state.dealPhase !== -1;
 		const isDragging = isActive && pressed;
 
 		const deckX = window.innerWidth / 2 - width / 2;
@@ -121,7 +120,7 @@ const getShallowCardState =
 			isDragging,
 			pileType,
 			isFaceDown,
-			isVisible,
+			isVisible: true,
 			cardPileIndex,
 			suit,
 			rank,
