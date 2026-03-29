@@ -33,7 +33,8 @@ jobs:
 
       - name: Deploy
         run: |
-          echo "TURN configured: $([ -n "$VITE_TURN_USERNAME" ] && echo yes || echo NO)"
+          echo "VITE_TURN_USERNAME set: $([ -n "$VITE_TURN_USERNAME" ] && echo YES || echo NO)"
+          echo "VITE_TURN_CREDENTIAL set: $([ -n "$VITE_TURN_CREDENTIAL" ] && echo YES || echo NO)"
           pnpm run deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
