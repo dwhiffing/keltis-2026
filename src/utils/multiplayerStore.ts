@@ -3,7 +3,7 @@ import { create } from 'zustand'
 
 function buildPeerConfig(): PeerOptions {
   const iceServers: RTCIceServer[] = [
-    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun.relay.metered.ca:80' },
   ]
 
   const turnUrl = import.meta.env.VITE_TURN_URL as string | undefined
