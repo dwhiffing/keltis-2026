@@ -18,6 +18,7 @@ import {
 import { type GameState, useGameStore } from '../utils/gameStore'
 import {
   CardBackSVG,
+  CircleSVG,
   FireSVG,
   LeafSVG,
   MoonSVG,
@@ -159,16 +160,18 @@ const _CardFront = ({ suit, rank }: { suit: Suit; rank: Rank }) => {
         <div className="rank">
           <span>{rankLabel}</span>
         </div>
-        {!isNeutral && <Suit suit={suit} />}
+        <Suit suit={suit} />
       </div>
       <div className={`${suitName} corner-rank br`}>
         <div className="rank">
           <span>{rankLabel}</span>
         </div>
-        {!isNeutral && <Suit suit={suit} />}
+        <Suit suit={suit} />
       </div>
 
-      <div className="center-suit">{!isNeutral && <Suit suit={suit} />}</div>
+      <div className="center-suit">
+        <Suit suit={suit} />
+      </div>
     </div>
   )
 }
@@ -181,5 +184,6 @@ const Suit = React.memo(({ suit }: { suit: Suit }) => {
   if (suit === 2) return <LeafSVG />
   if (suit === 3) return <MoonSVG />
   if (suit === 4) return <StarSVG />
+  if (suit === 5) return <CircleSVG />
   return null
 })
