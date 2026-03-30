@@ -3,20 +3,23 @@ import { getScore, useGameStore } from '../utils/gameStore'
 import { Modal } from './Modal'
 
 export const GameOverModal = () => {
-  const { gameOver, cards, newGame } = useGameStore(
+  const { gameOver, cards, newGame, localPlayerIndex } = useGameStore(
     useShallow((state) => ({
       gameOver: state.gameOver,
       cards: state.cards,
       newGame: state.newGame,
+      localPlayerIndex: state.localPlayerIndex,
     })),
   )
 
-  const score0 = getScore(0, cards)
-  const score1 = getScore(1, cards)
+  const myIndex = localPlayerIndex
+  const opponentIndex: 0 | 1 = myIndex === 0 ? 1 : 0
+  const myScore = getScore(myIndex, cards)
+  const opponentScore = getScore(opponentIndex, cards)
   const winner =
-    score0 > score1
+    myScore > opponentScore
       ? 'You win!'
-      : score1 > score0
+      : opponentScore > myScore
         ? 'Opponent wins!'
         : "It's a tie!"
 
@@ -28,11 +31,11 @@ export const GameOverModal = () => {
         <div className="flex justify-around text-center">
           <div>
             <div className="text-sm opacity-60 mb-1">You</div>
-            <div className="text-4xl font-bold">{score0}</div>
+            <div className="text-4xl font-bold">{myScore}</div>
           </div>
           <div>
             <div className="text-sm opacity-60 mb-1">Opponent</div>
-            <div className="text-4xl font-bold">{score1}</div>
+            <div className="text-4xl font-bold">{opponentScore}</div>
           </div>
         </div>
 
