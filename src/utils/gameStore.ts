@@ -122,6 +122,13 @@ export const useGameStore = create<GameStore>((set, get) => {
         const card = state.cards.find((c) => c.id === move.cardId)
         if (!card) return
         moveCard(card, move.targetPileIndex, remotePlayerIndex, get, set, true)
+        const { turnsUntilEnd } = get()
+        if (turnsUntilEnd !== null && turnsUntilEnd <= 4) {
+          setTimeout(
+            () => advanceTurnNoDraw(remotePlayerIndex, get, set),
+            CARD_TRANSITION_DURATION,
+          )
+        }
       } else {
         const sourceCard = getCardPile(move.sourcePileIndex, state.cards).at(-1)
         if (!sourceCard) return
@@ -280,6 +287,7 @@ function generateCards(seedInput?: number): {
   const seed = seedInput ?? Date.now()
   const shuffledCards = seededShuffle(CARDS, seed)
   const dealtCards = shuffledCards.slice(30)
+  // const dealtCards = shuffledCards.slice(82)
   const handCardCount = HAND_SIZE * 2
   const playerHandPile = NUM_SUITS * 2 + NUM_DISCARD_PILES + 2
   const cards = dealtCards.map((n, i) => {
@@ -297,6 +305,24 @@ function generateCards(seedInput?: number): {
 
 const getPileAtPoint = (x: number, y: number, cards: CardType[]) =>
   getCardFromPoint(x, y, cards)?.pileIndex ?? getPileFromPoint(x, y)
+
+const advanceTurnNoDraw = (
+  playerIndex: 0 | 1,
+  get: () => GameStore,
+  set: (state: Partial<GameStore>) => void,
+) => {
+  const nextPlayerIndex: 0 | 1 = playerIndex === 0 ? 1 : 0
+  const prev = get().turnsUntilEnd
+  const turnsUntilEnd = prev !== null ? prev - 1 : null
+  const gameOver = turnsUntilEnd === 0
+  set({
+    currentPlayerIndex: nextPlayerIndex,
+    turnPhase: 0,
+    lastPlayedPileIndex: null,
+    turnsUntilEnd,
+    gameOver,
+  })
+}
 
 const moveCard = (
   activeCard: CardType | null,
@@ -376,14 +402,28 @@ const moveCard = (
     // handles the transition — no need to set turnPhase: 1 here.
     if (!isRemote) {
       setTimeout(() => {
-        set({ turnPhase: 1 })
-        if (playerIndex === 1) {
-          const { mode } = useMultiplayerStore.getState()
-          if (mode === 'ai') {
-            aiTurnTimeout = setTimeout(
-              () => aiTakeTurn(get, set),
-              CARD_TRANSITION_DURATION,
-            )
+        const { turnsUntilEnd } = get()
+        if (turnsUntilEnd !== null && turnsUntilEnd <= 4) {
+          advanceTurnNoDraw(playerIndex, get, set)
+          if (!get().gameOver && playerIndex === 0) {
+            const { mode } = useMultiplayerStore.getState()
+            if (mode === 'ai') {
+              aiTurnTimeout = setTimeout(
+                () => aiTakeTurn(get, set),
+                CARD_TRANSITION_DURATION,
+              )
+            }
+          }
+        } else {
+          set({ turnPhase: 1 })
+          if (playerIndex === 1) {
+            const { mode } = useMultiplayerStore.getState()
+            if (mode === 'ai') {
+              aiTurnTimeout = setTimeout(
+                () => aiTakeTurn(get, set),
+                CARD_TRANSITION_DURATION,
+              )
+            }
           }
         }
       }, CARD_TRANSITION_DURATION)
