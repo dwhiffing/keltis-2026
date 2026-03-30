@@ -73,7 +73,16 @@ export const useGameStore = create<GameStore>((set, get) => {
     }, 500)
   }
 
-  const newGame = () => startGame()
+  const newGame = () => {
+    const { mode } = useMultiplayerStore.getState()
+    if (mode === 'multiplayer') {
+      if (get().localPlayerIndex === 0) {
+        useMultiplayerStore.getState().startNewGame()
+      }
+    } else {
+      startGame()
+    }
+  }
 
   const hasSeenInstructions =
     localStorage.getItem('hasSeenInstructions') === 'true'

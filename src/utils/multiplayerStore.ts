@@ -61,6 +61,7 @@ export type MoveData =
 
 type PeerMessage =
   | { type: 'game-start'; seed: number }
+  | { type: 'new-game'; seed: number }
   | { type: 'move'; move: MoveData }
 
 export function isTurnConfigured(): boolean {
@@ -84,6 +85,7 @@ interface MultiplayerStore extends MultiplayerState {
   closeLobby: () => void
   hostGame: () => void
   joinGame: (code: string) => void
+  startNewGame: () => void
   sendMove: (move: MoveData) => void
   disconnect: () => void
 }
@@ -215,7 +217,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
 
       conn.on('data', (raw) => {
         const msg = raw as PeerMessage
-        if (msg.type === 'game-start') {
+        if (msg.type === 'game-start' || msg.type === 'new-game') {
           onGameStartCallback?.(msg.seed, 1) // guest is always player 1
           set({
             gameCode: code.toUpperCase(),
@@ -246,6 +248,12 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
 
   sendMove: (move: MoveData) => {
     conn?.send({ type: 'move', move } satisfies PeerMessage)
+  },
+
+  startNewGame: () => {
+    const seed = Date.now()
+    conn?.send({ type: 'new-game', seed } satisfies PeerMessage)
+    onGameStartCallback?.(seed, 0)
   },
 
   disconnect: () => {

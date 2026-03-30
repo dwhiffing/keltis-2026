@@ -6,7 +6,6 @@ import { useGameStore } from '../utils/gameStore'
 import Card from './Card'
 import { GameOverModal } from './GameOverModal'
 import { Header } from './Header'
-import { InstructionsModal } from './InstructionsModal'
 import { LobbyModal } from './LobbyModal'
 import { Pile } from './Pile'
 
@@ -99,7 +98,7 @@ function App() {
         ))}
       </div>
 
-      <InstructionsModal />
+      {/* <InstructionsModal /> */}
       <GameOverModal />
       <LobbyModal />
     </div>

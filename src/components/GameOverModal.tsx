@@ -1,5 +1,6 @@
 import { useShallow } from 'zustand/react/shallow'
 import { getScore, useGameStore } from '../utils/gameStore'
+import { useMultiplayerStore } from '../utils/multiplayerStore'
 import { Modal } from './Modal'
 
 export const GameOverModal = () => {
@@ -11,6 +12,8 @@ export const GameOverModal = () => {
       localPlayerIndex: state.localPlayerIndex,
     })),
   )
+  const { mode } = useMultiplayerStore(useShallow((s) => ({ mode: s.mode })))
+  const isGuest = mode === 'multiplayer' && localPlayerIndex === 1
 
   const myIndex = localPlayerIndex
   const opponentIndex: 0 | 1 = myIndex === 0 ? 1 : 0
@@ -41,11 +44,17 @@ export const GameOverModal = () => {
 
         <p className="text-center text-lg font-semibold">{winner}</p>
 
-        <button
-          className="w-full py-2 px-4 rounded bg-primary text-white font-bold"
-          onClick={newGame}>
-          New Game
-        </button>
+        {isGuest ? (
+          <p className="text-center text-sm opacity-60">
+            Waiting for host to start a new game…
+          </p>
+        ) : (
+          <button
+            className="w-full py-2 px-4 rounded bg-primary text-white font-bold"
+            onClick={newGame}>
+            New Game
+          </button>
+        )}
       </div>
     </Modal>
   )

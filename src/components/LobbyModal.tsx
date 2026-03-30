@@ -50,7 +50,7 @@ export function LobbyModal() {
                 if (e.key === 'Enter' && inputCode.length === 4)
                   joinGame(inputCode)
               }}
-              autoFocus
+              autoFocus={showLobbyModal}
             />
             {error && (
               <p className="text-red-400 text-sm text-center">{error}</p>
