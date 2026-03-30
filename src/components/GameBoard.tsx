@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { useForceUpdate, useWindowEvent } from '../utils'
 import { NUM_DISCARD_PILES, NUM_SUITS } from '../utils/constants'
 import { useGameStore } from '../utils/gameStore'
+import { useMultiplayerStore } from '../utils/multiplayerStore'
 import Card from './Card'
 import { GameOverModal } from './GameOverModal'
 import { Header } from './Header'
@@ -10,6 +11,7 @@ import { LobbyModal } from './LobbyModal'
 import { Pile } from './Pile'
 
 function App() {
+  const { showLobbyModal } = useMultiplayerStore()
   const state = useGameStore(
     useShallow((state) => ({
       cardCount: state.cards.length,
@@ -100,7 +102,7 @@ function App() {
 
       {/* <InstructionsModal /> */}
       <GameOverModal />
-      <LobbyModal />
+      <LobbyModal key={showLobbyModal ? 'show' : 'hide'} />
     </div>
   )
 }
