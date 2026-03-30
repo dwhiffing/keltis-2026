@@ -60,6 +60,7 @@ function buildPeerConfig(): PeerOptions {
 export type MoveData =
   | { phase: 'play'; cardId: number; targetPileIndex: number }
   | { phase: 'draw'; sourcePileIndex: number }
+  | { phase: 'claim-stone'; rank: number }
 
 export interface SavedGameState {
   cards: CardType[]
@@ -69,6 +70,12 @@ export interface SavedGameState {
   turnsUntilEnd: number | null
   gameOver: boolean
   wins: [number, number]
+  stones: [number[], number[]]
+  stoneClaim: {
+    rank: number
+    cardsDrawn: number
+    discardPiles: number[]
+  } | null
 }
 
 type PeerMessage =

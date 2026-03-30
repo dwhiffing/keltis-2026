@@ -82,6 +82,23 @@
   .button {
     @apply flex justify-center items-center px-2 py-1 lg:py-2 min-w-10 rounded bg-on-surface hover:bg-on-surface-active transition-colors font-bold cursor-pointer;
   }
+  .wishing-stone {
+    @apply aspect-square rounded-full bg-yellow-400 border-yellow-600 shadow-md flex items-center justify-center font-bold text-yellow-900 transition-all duration-500;
+    width: calc(var(--base-size) * .51);
+    font-size: calc(var(--base-size) * .3);
+    border-width: calc(var(--base-size) * .025);
+    &.claiming {
+      opacity: 0.4;
+    }
+    &.claimable {
+      background: transparent;
+      color: #fff;
+      border-color: #fff;
+      opacity: 0.5;
+      @apply shadow-none;
+      @apply cursor-pointer;
+    }
+  }
 
   .card,
   .pile {

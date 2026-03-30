@@ -35,6 +35,12 @@ export interface GameState {
   lastPlayedPileIndex: number | null
   turnsUntilEnd: number | null // null = deck not yet empty; counts down from 2 after last deck draw
   gameOver: boolean
+  stones: [number[], number[]]
+  stoneClaim: {
+    rank: number
+    cardsDrawn: number
+    discardPiles: number[]
+  } | null
   showInstructionsModal: boolean
 }
 
@@ -49,6 +55,7 @@ interface GameStore extends GameState {
   onMouseDown: (params: MouseParams) => void
   onMouseUp: (params: MouseParams) => void
   onMouseMove: (params: MouseParams) => void
+  claimWishingStone: (index: number) => void
   openInstructions: () => void
   closeInstructions: () => void
 }
@@ -56,14 +63,12 @@ interface GameStore extends GameState {
 // tracks the initial cursor position when dragging starts
 // so that we can tell how far the cursor moved and tell a click from a drag
 let cursorDownAt = 0
-let lastClickedCardId: number | null = null
 let cursorDownPos = { x: 0, y: 0 }
 // tracks the offset between the cursor and the card position
 // so that when you drag, the card anchors to the mouse correctly
 let cursorDelta = { x: 0, y: 0 }
 let dealTimeout: number | null = null
 let aiTurnTimeout: number | null = null
-let lastDoubleClickAt = 0
 
 export const useGameStore = create<GameStore>((set, get) => {
   const startGame = (seed?: number, localPlayerIndex: 0 | 1 = 0) => {
@@ -139,72 +144,90 @@ export const useGameStore = create<GameStore>((set, get) => {
         lastPlayedPileIndex: saved.lastPlayedPileIndex,
         turnsUntilEnd: saved.turnsUntilEnd,
         gameOver: saved.gameOver,
+        stones: saved.stones ?? [[], []],
+        stoneClaim: saved.stoneClaim ?? null,
       })
     },
     applyRemoteMove: (move: MoveData) => {
       const state = get()
-      const remotePlayerIndex: 0 | 1 = state.localPlayerIndex === 0 ? 1 : 0
+      const themIndex: 0 | 1 = state.localPlayerIndex === 0 ? 1 : 0
       const s = NUM_SUITS
+
+      if (move.phase === 'claim-stone') {
+        set({
+          stoneClaim: { rank: move.rank, cardsDrawn: 0, discardPiles: [] },
+        })
+        return
+      }
+
       if (move.phase === 'play') {
         const card = state.cards.find((c) => c.id === move.cardId)
         if (!card) return
-        moveCard(card, move.targetPileIndex, remotePlayerIndex, get, set, true)
+        moveCard(card, move.targetPileIndex, themIndex, get, set, true)
+
+        const claim = get().stoneClaim
+        if (claim) {
+          const discardPiles = [...claim.discardPiles, move.targetPileIndex]
+          const turnPhase = discardPiles.length >= 2 ? 1 : 0
+          set({ turnPhase, stoneClaim: { ...claim, discardPiles } })
+          return
+        }
+
         const { turnsUntilEnd } = get()
         if (turnsUntilEnd !== null && turnsUntilEnd <= 4) {
           setTimeout(
-            () => advanceTurnNoDraw(remotePlayerIndex, get, set),
+            () => advanceTurnNoDraw(themIndex, get, set),
             CARD_TRANSITION_DURATION,
           )
         } else {
           // Mark draw phase so persisted state reflects the opponent still needs to draw
           set({ turnPhase: 1 })
         }
-      } else {
-        const sourceCard = getCardPile(move.sourcePileIndex, state.cards).at(-1)
-        if (!sourceCard) return
-        const remoteHandPile =
-          remotePlayerIndex === 0 ? 2 + s * 2 + NUM_DISCARD_PILES : 1
-        const nextPlayerIndex: 0 | 1 = remotePlayerIndex === 0 ? 1 : 0
-        drawIntoHand(remoteHandPile, sourceCard, nextPlayerIndex, get, set)
-        if (useMultiplayerStore.getState().mode === 'multiplayer') {
-          navigator.vibrate?.(100)
-        }
+      } else if (move.phase === 'draw') {
+        const card = getCardPile(move.sourcePileIndex, state.cards).at(-1)
+        if (!card) return
+        const themHand = themIndex === 0 ? 2 + s * 2 + NUM_DISCARD_PILES : 1
+        const nextTurn: 0 | 1 = themIndex === 0 ? 1 : 0
+        const isEnd = handleDraw(themHand, card, themIndex, nextTurn, get, set)
+        if (isEnd) navigator.vibrate?.(100)
       }
     },
     onMouseDown: ({ clientX, clientY }: MouseParams) => {
-      const localPlayerIndex = get().localPlayerIndex
-      if (get().currentPlayerIndex !== localPlayerIndex || get().gameOver)
-        return
+      const usIndex = get().localPlayerIndex
+      if (get().currentPlayerIndex !== usIndex || get().gameOver) return
       const { activeCard, cards, turnPhase } = get()
+      const mode = useMultiplayerStore.getState().mode
 
       // Draw phase: player must pick a pile to draw from
       if (turnPhase === 1) {
         const s = NUM_SUITS
-        const playerHandPile =
-          localPlayerIndex === 0 ? 2 + s * 2 + NUM_DISCARD_PILES : 1
-        const nextPlayerIndex: 0 | 1 = localPlayerIndex === 0 ? 1 : 0
+        const usHand = usIndex === 0 ? 2 + s * 2 + NUM_DISCARD_PILES : 1
+        const nextTurn: 0 | 1 = usIndex === 0 ? 1 : 0
         const sourcePileIndex = getPileAtPoint(clientX, clientY, cards)
         const isDrawPile = sourcePileIndex === 0
         const isDiscardPile =
           sourcePileIndex >= 2 + s &&
           sourcePileIndex < 2 + s + NUM_DISCARD_PILES
-        const sourceCard = getCardPile(sourcePileIndex, cards).at(-1)
+        const card = getCardPile(sourcePileIndex, cards).at(-1)
+        const claim = get().stoneClaim
+        const isClaimBlockedPile = claim?.discardPiles.includes(sourcePileIndex)
         const isAllowed =
           (isDrawPile || isDiscardPile) &&
-          sourceCard &&
-          sourcePileIndex !== get().lastPlayedPileIndex
+          card &&
+          sourcePileIndex !== get().lastPlayedPileIndex &&
+          !isClaimBlockedPile
         if (isAllowed) {
-          drawIntoHand(playerHandPile, sourceCard, nextPlayerIndex, get, set)
-          const { mode } = useMultiplayerStore.getState()
-          if (mode === 'multiplayer') {
-            useMultiplayerStore
-              .getState()
-              .sendMove({ phase: 'draw', sourcePileIndex })
-          } else {
+          const isEnd = handleDraw(usHand, card, usIndex, nextTurn, get, set)
+          if (isEnd && mode === 'ai') {
             aiTurnTimeout = setTimeout(
               () => aiTakeTurn(get, set),
               CARD_TRANSITION_DURATION,
             )
+          }
+          if (mode === 'multiplayer') {
+            useMultiplayerStore
+              .getState()
+              .sendMove({ phase: 'draw', sourcePileIndex })
           }
         }
         return
@@ -216,27 +239,19 @@ export const useGameStore = create<GameStore>((set, get) => {
         clickedCard &&
         clickedCard.pileIndex >= 2 + s &&
         clickedCard.pileIndex < 2 + s + NUM_DISCARD_PILES
+      const claim = get().stoneClaim
+      const isClaimRank = !claim || clickedCard?.rank === claim.rank
       const pickableCard =
         clickedCard &&
-        isCardPickable(clickedCard, localPlayerIndex) &&
-        !(turnPhase === 0 && isDiscardCard)
+        isCardPickable(clickedCard, usIndex) &&
+        !(turnPhase === 0 && isDiscardCard) &&
+        isClaimRank
           ? clickedCard
           : undefined
 
-      const isDoubleClick =
-        pickableCard?.id != null &&
-        pickableCard.id === lastClickedCardId &&
-        Date.now() - cursorDownAt < 350
-
-      if (isDoubleClick && pickableCard) {
-        lastDoubleClickAt = Date.now()
-        // moveCard(pickableCard, pileIndex, 0, get, set);
-        // return;
-      }
-
       if (activeCard) {
         const targetPileIndex = getPileAtPoint(clientX, clientY, cards)
-        moveCard(activeCard, targetPileIndex, localPlayerIndex, get, set)
+        moveCard(activeCard, targetPileIndex, usIndex, get, set)
       }
 
       if (pickableCard) {
@@ -245,35 +260,30 @@ export const useGameStore = create<GameStore>((set, get) => {
 
       cursorDownPos = { x: clientX, y: clientY }
       cursorDownAt = Date.now()
-      lastClickedCardId = pickableCard?.id ?? null
       if (pickableCard) {
         const { x: cardX, y: cardY } = getCardPilePosition(
           pickableCard,
-          localPlayerIndex,
+          usIndex,
         )
         cursorDelta = { x: clientX - cardX, y: clientY - cardY }
         set({ cursorState: { mouseX: cardX, mouseY: cardY, pressed: true } })
       }
     },
     onMouseUp: ({ clientX, clientY }: MouseParams) => {
-      const localPlayerIndex = get().localPlayerIndex
-      if (get().currentPlayerIndex !== localPlayerIndex) return
+      const usIndex = get().localPlayerIndex
+      if (get().currentPlayerIndex !== usIndex) return
       const { activeCard, cards } = get()
       const posDiff =
         Math.abs(cursorDownPos.x - clientX) +
         Math.abs(cursorDownPos.y - clientY)
       const timeDiff = Date.now() - cursorDownAt
 
-      if (
-        activeCard &&
-        (posDiff > 5 || timeDiff > 300) &&
-        Date.now() - lastDoubleClickAt > 300
-      ) {
+      if (activeCard && (posDiff > 5 || timeDiff > 300)) {
         const { width, height } = getPileSize()
         const x = clientX + (width / 2 - cursorDelta.x)
         const y = clientY + (height / 2 - cursorDelta.y)
         const targetPileIndex = getPileAtPoint(x, y, cards)
-        moveCard(activeCard, targetPileIndex, localPlayerIndex, get, set)
+        moveCard(activeCard, targetPileIndex, usIndex, get, set)
       }
 
       cursorDownPos = { x: 0, y: 0 }
@@ -290,6 +300,20 @@ export const useGameStore = create<GameStore>((set, get) => {
       set({ showInstructionsModal: true })
     },
     closeInstructions: () => set({ showInstructionsModal: false }),
+    claimWishingStone: (index: number) => {
+      const invalid =
+        get().stoneClaim ||
+        get().currentPlayerIndex !== get().localPlayerIndex ||
+        get().turnPhase !== 0 ||
+        get().stones.flat().includes(index)
+      if (invalid) return
+
+      set({ stoneClaim: { rank: index, cardsDrawn: 0, discardPiles: [] } })
+      const { mode, sendMove } = useMultiplayerStore.getState()
+      if (mode === 'multiplayer') {
+        sendMove({ phase: 'claim-stone', rank: index })
+      }
+    },
   }
 })
 
@@ -304,6 +328,8 @@ function initializeGameState(): Omit<GameState, 'cards'> {
     lastPlayedPileIndex: null,
     turnsUntilEnd: null,
     gameOver: false,
+    stones: [[], []],
+    stoneClaim: null,
     showInstructionsModal: false,
   }
 }
@@ -317,11 +343,11 @@ function generateCards(seedInput?: number): {
   const dealtCards = shuffledCards.slice(30)
   // const dealtCards = shuffledCards.slice(82)
   const handCardCount = HAND_SIZE * 2
-  const playerHandPile = NUM_SUITS * 2 + NUM_DISCARD_PILES + 2
+  const ourHand = NUM_SUITS * 2 + NUM_DISCARD_PILES + 2
   const cards = dealtCards.map((n, i) => {
     const id = i
     if (i < handCardCount) {
-      const pileIndex = i % 2 === 0 ? playerHandPile : 1
+      const pileIndex = i % 2 === 0 ? ourHand : 1
       const cardPileIndex = Math.floor(i / 2)
       return { ...n, id, pileIndex, cardPileIndex }
     }
@@ -414,7 +440,8 @@ const moveCard = (
     isValidPlay(cardsInTargetPile, activeCard)
 
   const isValid =
-    pileType !== 'hand' && (pileType === 'discard' || isValidTableau)
+    pileType !== 'hand' &&
+    (pileType === 'discard' || (!get().stoneClaim && isValidTableau))
 
   if (!isValid) return set({ cards, activeCard: null })
 
@@ -446,8 +473,18 @@ const moveCard = (
         })
       }
     }
+
+    // Wishing stone claim: track plays, don't enter normal turn flow
+    const claim = get().stoneClaim
+    if (claim && !isRemote) {
+      const discardPiles = [...claim.discardPiles, pileIndex]
+      const turnPhase = discardPiles.length >= 2 ? 1 : 0
+      set({ turnPhase, stoneClaim: { ...claim, discardPiles } })
+      return
+    }
+
     // Both player and AI must choose a pile to draw from.
-    // For remote moves, the draw message will arrive separately and drawIntoHand
+    // For remote moves, the draw message will arrive separately
     // handles the transition — no need to set turnPhase: 1 here.
     if (!isRemote) {
       const { turnsUntilEnd } = get()
@@ -519,35 +556,37 @@ const aiTakeTurn = (
       drawOptions[Math.floor(Math.random() * drawOptions.length)]
     const sourceCard = getCardPile(sourcePileIndex, cards).at(-1)
     if (sourceCard) {
-      set({ turnPhase: 0 })
-      drawIntoHand(opponentHandPile, sourceCard, 0, get, set)
+      handleDraw(opponentHandPile, sourceCard, 1, 0, get, set)
     }
   }
 }
 
-const drawIntoHand = (
-  handPileIndex: number,
-  deckTopCard: CardType,
+const handleDraw = (
+  handPile: number,
+  card: CardType,
+  playerIndex: 0 | 1,
   nextPlayerIndex: 0 | 1,
   get: () => GameStore,
   set: (state: Partial<GameStore>) => void,
-) => {
-  const current = get().cards
-  const handCards = getCardPile(handPileIndex, current)
-  const merged = [...handCards, deckTopCard].sort((a, b) =>
-    a.suit !== b.suit ? a.suit - b.suit : a.rank - b.rank,
+): boolean => {
+  const claim = get().stoneClaim
+  const sortedCards = [...getCardPile(handPile, get().cards), card].sort(
+    (a, b) => (a.suit !== b.suit ? a.suit - b.suit : a.rank - b.rank),
   )
-  const updatedCards = current.map((card) => {
-    const newIdx = merged.findIndex((c) => c.id === card.id)
+  const updatedCards = get().cards.map((card) => {
+    const newIdx = sortedCards.findIndex((c) => c.id === card.id)
     if (newIdx === -1) return card
-    return { ...card, pileIndex: handPileIndex, cardPileIndex: newIdx }
+    return { ...card, pileIndex: handPile, cardPileIndex: newIdx }
   })
+  if (claim?.cardsDrawn === 0) {
+    set({ cards: updatedCards, stoneClaim: { ...claim, cardsDrawn: 1 } })
+    return false
+  }
+  const deckNowEmpty =
+    card.pileIndex === 0 && getCardPile(0, updatedCards).length === 0
 
-  const drewFromDeck = deckTopCard.pileIndex === 0
-  const deckNowEmpty = getCardPile(0, updatedCards).length === 0
-  const prevTurnsUntilEnd = get().turnsUntilEnd
-  let turnsUntilEnd: number | null = prevTurnsUntilEnd
-  if (drewFromDeck && deckNowEmpty && turnsUntilEnd === null) {
+  let turnsUntilEnd: number | null = get().turnsUntilEnd
+  if (deckNowEmpty && turnsUntilEnd === null) {
     turnsUntilEnd = 4
   } else if (turnsUntilEnd !== null) {
     turnsUntilEnd = turnsUntilEnd - 1
@@ -563,42 +602,66 @@ const drawIntoHand = (
     cards: updatedCards,
   })
   if (gameOver) recordMultiplayerResult(get)
+  if (claim?.cardsDrawn === 1) {
+    const stones = [[...get().stones[0]], [...get().stones[1]]]
+    stones[playerIndex] = [...stones[playerIndex], claim.rank]
+    set({ stoneClaim: null, stones: stones as [number[], number[]] })
+  }
+  return true
 }
 
 const PILE_SCORE = [0, -4, -3, -2, 1, 2, 3, 6, 7, 10]
-
-const recordMultiplayerResult = (get: () => GameStore) => {
-  const { recordResult } = useMultiplayerStore.getState()
-  const { cards, localPlayerIndex } = get()
-  const myScore = getScore(localPlayerIndex, cards)
-  const opponentScore = getScore(localPlayerIndex === 0 ? 1 : 0, cards)
-  if (myScore !== opponentScore) recordResult(myScore > opponentScore)
-}
-
 const getPileScore = (length: number): number =>
   PILE_SCORE[Math.min(length, PILE_SCORE.length - 1)]
 
-export const getScore = (playerIndex: 0 | 1, cards: CardType[]): number => {
+const STONE_SCORE = [-4, -1, 0, 4, 6, 10]
+const getStoneScore = (length: number): number =>
+  STONE_SCORE[Math.min(length, STONE_SCORE.length - 1)]
+
+const recordMultiplayerResult = (get: () => GameStore) => {
+  const { recordResult } = useMultiplayerStore.getState()
+  const { cards, localPlayerIndex, stones } = get()
+  const myScore = getScore(localPlayerIndex, cards, stones)
+  const opponentScore = getScore(localPlayerIndex === 0 ? 1 : 0, cards, stones)
+  if (myScore !== opponentScore) recordResult(myScore > opponentScore)
+}
+
+export const getScore = (
+  playerIndex: 0 | 1,
+  cards: CardType[],
+  stones: [number[], number[]],
+): number => {
   const s = NUM_SUITS
   const tableauStart = playerIndex === 0 ? 2 + s + NUM_DISCARD_PILES : 2
-  return Array.from({ length: s }, (_, i) =>
+  const baseScore = Array.from({ length: s }, (_, i) =>
     getPileScore(getCardPile(tableauStart + i, cards).length),
   ).reduce((a, b) => a + b, 0)
+  return baseScore + getStoneScore(stones[playerIndex].length)
+}
+
+type ScoreBreakdownRow = {
+  suit?: Suit
+  size: number
+  points: number
 }
 
 export const getScoreBreakdown = (
   playerIndex: 0 | 1,
   cards: CardType[],
-): { suit: Suit; size: number; points: number }[] => {
+  stones: [number[], number[]],
+): ScoreBreakdownRow[] => {
   const s = NUM_SUITS
   const tableauStart = playerIndex === 0 ? 2 + s + NUM_DISCARD_PILES : 2
   const piles = Array.from({ length: s }, (_, i) =>
     getCardPile(tableauStart + i, cards),
   )
-  return Array.from({ length: s }, (_, i) => {
+  const breakdown: ScoreBreakdownRow[] = Array.from({ length: s }, (_, i) => {
     const size = piles.find((p) => p[0]?.suit === i)?.length || 0
     return { suit: i as Suit, size, points: getPileScore(size) }
   })
+  const stoneCount = stones[playerIndex].length
+  breakdown.push({ size: stoneCount, points: getStoneScore(stoneCount) })
+  return breakdown
 }
 
 const getCardFromPoint = (x: number, y: number, cards: CardType[]) => {
@@ -714,5 +777,7 @@ useGameStore.subscribe((state) => {
     turnsUntilEnd: state.turnsUntilEnd,
     gameOver: state.gameOver,
     wins: mp.wins,
+    stones: state.stones,
+    stoneClaim: state.stoneClaim,
   })
 })

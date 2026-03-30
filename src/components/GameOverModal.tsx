@@ -1,8 +1,8 @@
 import { useShallow } from 'zustand/react/shallow'
 import { getScore, getScoreBreakdown, useGameStore } from '../utils/gameStore'
 import { useMultiplayerStore } from '../utils/multiplayerStore'
-import { FireSVG, LeafSVG, MoonSVG, StarSVG, WaterSVG } from './svg'
 import { Modal } from './Modal'
+import { CircleSVG, FireSVG, LeafSVG, MoonSVG, StarSVG, WaterSVG } from './svg'
 
 const SUIT_ICONS = [
   <FireSVG />,
@@ -15,32 +15,37 @@ const SUIT_ICONS = [
 const ScoreBreakdown = ({
   playerIndex,
   cards,
+  stones,
 }: {
   playerIndex: 0 | 1
   cards: CardType[]
+  stones: [number[], number[]]
 }) => {
-  const rows = getScoreBreakdown(playerIndex, cards)
+  const rows = getScoreBreakdown(playerIndex, cards, stones)
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-0">
       {rows.map(({ suit, size, points }) => (
         <div
-          key={suit}
-          className="flex items-center justify-between text-base font-bold text-shadow-sm">
-          <div className="flex items-center">
-            <div className="w-4 h-4 opacity-70">{SUIT_ICONS[suit]}</div>
+          key={suit ?? 'stones'}
+          className="flex items-center justify-between text-lg font-bold text-shadow-2xs">
+          <div className="flex items-center w-10">
+            <div className="w-4 h-4 opacity-70">
+              {typeof suit === 'number' ? SUIT_ICONS[suit] : <CircleSVG />}
+            </div>
             <div className="flex items-center gap-0.5">
               <span className="opacity-60">×</span>
               <span className="opacity-60">{size}</span>
             </div>
           </div>
+          <div className="h-px border-b border-dotted border-[#fff5] flex-1 mx-2" />
           <span
-            className={
+            className={`${
               points < 0
-                ? 'text-red-400'
-                : points > 0
-                  ? 'text-green-400'
+                ? 'text-red-300'
+                : points !== 0
+                  ? 'text-white'
                   : 'opacity-40'
-            }>
+            } w-4 text-right`}>
             {points > 0 ? '+' : ''}
             {points}
           </span>
@@ -51,12 +56,13 @@ const ScoreBreakdown = ({
 }
 
 export const GameOverModal = () => {
-  const { gameOver, cards, newGame, localPlayerIndex } = useGameStore(
+  const { gameOver, cards, newGame, localPlayerIndex, stones } = useGameStore(
     useShallow((state) => ({
       gameOver: state.gameOver,
       cards: state.cards,
       newGame: state.newGame,
       localPlayerIndex: state.localPlayerIndex,
+      stones: state.stones,
     })),
   )
   const { mode, wins, disconnect } = useMultiplayerStore(
@@ -70,8 +76,8 @@ export const GameOverModal = () => {
 
   const myIndex = localPlayerIndex
   const opponentIndex: 0 | 1 = myIndex === 0 ? 1 : 0
-  const myScore = getScore(myIndex, cards)
-  const opponentScore = getScore(opponentIndex, cards)
+  const myScore = getScore(myIndex, cards, stones)
+  const opponentScore = getScore(opponentIndex, cards, stones)
   const winner =
     myScore > opponentScore
       ? 'You win!'
@@ -87,13 +93,21 @@ export const GameOverModal = () => {
         <div className="flex justify-around gap-4">
           <div className="flex-1">
             <div className="text-sm opacity-60 mb-2 text-center">You</div>
-            <ScoreBreakdown playerIndex={myIndex} cards={cards} />
+            <ScoreBreakdown
+              playerIndex={myIndex}
+              cards={cards}
+              stones={stones}
+            />
             <div className="text-2xl font-bold text-center mt-2">{myScore}</div>
           </div>
           <div className="w-px bg-current opacity-10" />
           <div className="flex-1">
             <div className="text-sm opacity-60 mb-2 text-center">Opponent</div>
-            <ScoreBreakdown playerIndex={opponentIndex} cards={cards} />
+            <ScoreBreakdown
+              playerIndex={opponentIndex}
+              cards={cards}
+              stones={stones}
+            />
             <div className="text-2xl font-bold text-center mt-2">
               {opponentScore}
             </div>

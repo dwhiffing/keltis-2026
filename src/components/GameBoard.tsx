@@ -9,6 +9,7 @@ import { GameOverModal } from './GameOverModal'
 import { Header } from './Header'
 import { LobbyModal } from './LobbyModal'
 import { Pile } from './Pile'
+import { WishingStonePile } from './WishingStonePile'
 
 function App() {
   const { showLobbyModal } = useMultiplayerStore()
@@ -57,6 +58,10 @@ function App() {
               ))}
             </div>
 
+            <WishingStonePile
+              playerIndex={state.localPlayerIndex === 0 ? 1 : 0}
+            />
+
             <div className="w-full flex gap-board items-start justify-center">
               {[0, 1].map((index) => (
                 <Pile
@@ -74,6 +79,8 @@ function App() {
                 />
               ))}
             </div>
+
+            <WishingStonePile playerIndex={state.localPlayerIndex} />
 
             <div className="w-full flex gap-board items-start justify-center">
               {suitArray.map((_, index) => (

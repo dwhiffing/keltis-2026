@@ -137,7 +137,11 @@ const getShallowCardState =
       pileType,
       isFaceDown,
       opacity: 1,
-      disabled: isOurTurn && state.turnPhase === 1 && isOwnHand,
+      disabled:
+        isOurTurn &&
+        isOwnHand &&
+        (state.turnPhase === 1 ||
+          (state.stoneClaim !== null && card.rank !== state.stoneClaim.rank)),
       cardPileIndex,
       suit,
       rank,
