@@ -85,7 +85,7 @@ function App() {
             </div>
           </div>
 
-          <div className="absolute bottom-0 inset-x-0 transform translate-y-2/5 flex justify-center items-center">
+          <div className="absolute bottom-0 inset-x-0 transform translate-y-4/5 flex justify-center items-center">
             <Pile pileIndex={bottomHandPile} pileType="hand" />
           </div>
         </div>

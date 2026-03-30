@@ -62,8 +62,8 @@ const Card = ({ cardId }: { cardId: number }) => {
 
   return (
     <div
-      data-id={store.isVisible ? cardId : undefined}
-      className={`card ${store.isFaceDown ? 'face-down' : ''} ${store.isDragging || !store.isVisible ? 'active' : 'inactive'}`}
+      data-id={store.opacity === 1 ? cardId : undefined}
+      className={`card ${store.isFaceDown ? 'face-down' : ''} ${store.isDragging || store.opacity === 0 ? 'active' : 'inactive'}`}
       style={{
         zIndex,
         scale: store.scale,
@@ -75,12 +75,17 @@ const Card = ({ cardId }: { cardId: number }) => {
         translate,
         boxShadow,
         willChange: 'transform',
-        opacity: store.isVisible ? 1 : 0,
+        opacity: store.opacity,
       }}>
       <CardFront suit={store.suit} rank={store.rank} />
       <div className="card-back" style={{ transitionDelay }}>
         <CardBackSVG />
       </div>
+
+      <div
+        className="card-disabled-overlay"
+        style={{ opacity: store.disabled ? 1 : 0 }}
+      />
     </div>
   )
 }
@@ -111,8 +116,14 @@ const getShallowCardState =
     const deckY = window.innerHeight / 2 - height / 2
 
     const x = isShuffling ? deckX : isDragging ? mouseX : xPos
-    const y = isShuffling ? deckY : isDragging ? mouseY : yPos
-    const scale = isActive ? 1.15 : 1
+    let y = isShuffling ? deckY : isDragging ? mouseY : yPos
+
+    const isOwnHand = pileType === 'hand' && pileIndex !== opponentHandPile
+    const isOurTurn = state.currentPlayerIndex === state.localPlayerIndex
+    if (!isShuffling && isOwnHand && isOurTurn) y -= width * 0.8
+    const scale = isShuffling
+      ? 1
+      : (isActive ? 1.15 : 1) * (isOwnHand ? 1.8 : 1)
     const rotate = isDragging || isShuffling ? 0 : rotatePos
 
     return {
@@ -124,7 +135,8 @@ const getShallowCardState =
       isDragging,
       pileType,
       isFaceDown,
-      isVisible: true,
+      opacity: 1,
+      disabled: isOurTurn && state.turnPhase === 1 && isOwnHand,
       cardPileIndex,
       suit,
       rank,

@@ -49,7 +49,7 @@ export const getCardPilePosition = (
           : 'tableau'
 
   const CARD_Y_GAP = 0.25
-  const CARD_X_GAP = 0.3
+  const CARD_X_GAP = 0.45
   let rotate = 0
   if (pileType === 'tableau') {
     const { width } = getPileSize()
@@ -63,7 +63,7 @@ export const getCardPilePosition = (
   if (pileType === 'hand') {
     const { width } = getPileSize()
     const gw = CARD_X_GAP * width
-    const ANGLE_STEP_DEG = 5
+    const ANGLE_STEP_DEG = 4
     const distFromCenter = card.cardPileIndex - 3.5
     const angleRad = distFromCenter * ANGLE_STEP_DEG * (Math.PI / 180)
     const R = gw / Math.sin(ANGLE_STEP_DEG * (Math.PI / 180))
