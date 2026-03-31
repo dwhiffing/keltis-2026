@@ -136,6 +136,13 @@
     .rank {
       width: var(--card-rank-width);
       @apply flex justify-center items-center relative;
+      &.rank-10 {
+        position: relative;
+        font-size: calc(var(--card-font-size) * 0.95);
+        width: calc(var(--card-rank-width) * 1.6);
+        letter-spacing: calc(var(--base-size) * -0.025);
+        left: calc(var(--base-size) * -0.015);
+      }
     }
 
     svg {

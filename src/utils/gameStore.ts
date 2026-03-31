@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { getCardPilePosition, getPileSize } from '.'
+import { getCardPilePosition } from '.'
 import {
   CARD_TRANSITION_DURATION,
   CARDS,

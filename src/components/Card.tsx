@@ -158,18 +158,18 @@ const _CardFront = ({ suit, rank }: { suit: Suit; rank: Rank }) => {
   const isNeutral = suit === NEUTRAL_SUIT
   const color = isNeutral ? '#2c3e50' : SUIT_COLORS[suit]
   const suitName = isNeutral ? 'neutral' : SUIT_NAMES[suit]
-  const rankLabel = rank === 10 ? 'X' : rank
+  const rankLabel = rank === 11 ? 'X' : rank
 
   return (
     <div className="card-front" style={{ color }}>
       <div className={`${suitName} corner-rank tl`}>
-        <div className="rank">
+        <div className={`rank ${rank === 10 ? 'rank-10' : ''}`}>
           <span>{rankLabel}</span>
         </div>
         <Suit suit={suit} />
       </div>
       <div className={`${suitName} corner-rank br`}>
-        <div className="rank">
+        <div className={`rank ${rank === 10 ? 'rank-10' : ''}`}>
           <span>{rankLabel}</span>
         </div>
         <Suit suit={suit} />

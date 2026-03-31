@@ -12,7 +12,7 @@ export const SUIT_NAMES: string[] = ['fire', 'water', 'leaf', 'moon', 'star']
 export const NUM_SUITS = SUIT_NAMES.length
 export const NUM_DISCARD_PILES = 4
 
-export const END_CARD_RANK: Rank = 10
+export const END_CARD_RANK: Rank = 11
 export const NEUTRAL_SUIT: Suit = NUM_SUITS as Suit // not counted in NUM_SUITS
 
 const SUITS = Array.from({ length: NUM_SUITS }, (_, i) => i)
@@ -21,13 +21,14 @@ const RANK_COUNTS: [Rank, number][] = [
   [1, 1],
   [2, 1],
   [3, 2],
-  [4, 3],
-  [5, 3],
+  [4, 2],
+  [5, 2],
   [6, 2],
-  [7, 1],
+  [7, 2],
   [8, 1],
   [9, 1],
-  [10, 2],
+  [10, 1],
+  [11, 2],
 ]
 const RANKS_EXPANDED = RANK_COUNTS.flatMap(([rank, count]) =>
   Array.from({ length: count }, () => rank),
