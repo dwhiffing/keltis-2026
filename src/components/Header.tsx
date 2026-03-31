@@ -5,7 +5,7 @@ import { HamburgerSVG } from './svg'
 
 export function Header() {
   const newGame = useGameStore((s) => s.newGame)
-  const openInstructions = useGameStore((s) => s.openInstructions)
+  // const openInstructions = useGameStore((s) => s.openInstructions)
   const { mode, openLobby, disconnect } = useMultiplayerStore()
 
   return (
@@ -14,12 +14,12 @@ export function Header() {
         <span className="text-lg lg:text-2xl whitespace-nowrap font-bold">
           Keltis
         </span>
-        <button
+        {/* <button
           className="button"
           onClick={openInstructions}
           title="Instructions">
           ?
-        </button>
+        </button> */}
       </div>
 
       <div className="flex-1 flex items-center justify-end gap-2 pointer-events-auto">
@@ -38,15 +38,11 @@ export function Header() {
                   },
                   {
                     label: 'Join Game',
-                    onClick: () => {
-                      openLobby('joining')
-                    },
+                    onClick: () => openLobby('joining'),
                   },
                   {
                     label: 'Local Game vs AI',
-                    onClick: () => {
-                      newGame()
-                    },
+                    onClick: () => newGame(),
                   },
                 ]
               : []),
