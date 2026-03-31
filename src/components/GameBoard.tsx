@@ -12,10 +12,11 @@ import { Pile } from './Pile'
 import { WishingStonePile } from './WishingStonePile'
 
 function App() {
-  const { showLobbyModal } = useMultiplayerStore()
+  const { showLobbyModal, openLobby, hostGame } = useMultiplayerStore()
   const state = useGameStore(
     useShallow((state) => ({
       cardCount: state.cards.length,
+      newGame: state.newGame,
       onMouseUp: state.onMouseUp,
       onMouseDown: state.onMouseDown,
       onMouseMove: state.onMouseMove,
@@ -42,7 +43,8 @@ function App() {
       <div id="ui" className="absolute inset-0">
         <Header />
 
-        <div className="flex flex-col justify-center h-full absolute inset-0">
+        <div
+          className={`flex flex-col justify-center h-full absolute inset-0 transition-opacity duration-500 ${state.cardCount === 0 ? 'opacity-0' : ''}`}>
           <div className="absolute top-0 inset-x-0 transform -translate-y-2/5 flex justify-center items-center">
             <Pile pileIndex={topHandPile} pileType="hand" />
           </div>
@@ -105,6 +107,28 @@ function App() {
         {Array.from({ length: state.cardCount }).map((_, cardId) => (
           <Card key={`card-${cardId}`} cardId={cardId} />
         ))}
+      </div>
+
+      <div
+        className={`flex flex-col justify-center items-center h-full gap-4 absolute inset-0 text-2xl transition-opacity duration-500 ${state.cardCount === 0 ? '' : 'opacity-0 pointer-events-none'}`}>
+        <button
+          className="button font-medium px-4 py-3"
+          onClick={() => {
+            openLobby('hosting')
+            hostGame()
+          }}>
+          Host Game
+        </button>
+        <button
+          className="button font-medium px-4 py-3"
+          onClick={() => openLobby('joining')}>
+          Join Game
+        </button>
+        <button
+          className="button font-medium px-4 py-3"
+          onClick={state.newGame}>
+          Local Game vs AI
+        </button>
       </div>
 
       {/* <InstructionsModal /> */}
