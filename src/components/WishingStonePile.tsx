@@ -2,6 +2,8 @@ import { useShallow } from 'zustand/shallow'
 import { NUM_DISCARD_PILES, NUM_SUITS } from '../utils/constants'
 import { useGameStore } from '../utils/gameStore'
 
+const WISHING_STONE_RANKS = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
 export const WishingStonePile = (props: { playerIndex: number }) => {
   const state = useGameStore(
     useShallow((state) => ({
@@ -13,43 +15,49 @@ export const WishingStonePile = (props: { playerIndex: number }) => {
           : null,
       cards: state.cards,
       localPlayerIndex: state.localPlayerIndex,
-      isShuffling: state.dealPhase === 0,
+      isShuffling: state.dealPhase !== -1,
+      turnsUntilEnd: state.turnsUntilEnd,
     })),
   )
+
   const isLocalPlayer = state.localPlayerIndex === props.playerIndex
-  const claimableStones = isLocalPlayer
-    ? getClaimableStones(state.cards, state.stones, props.playerIndex).filter(
-        (i) => i !== state.claimingRank,
-      )
-    : []
+  const claimingRank = isLocalPlayer ? state.claimingRank : null
+  const activeClaimableStones =
+    !isLocalPlayer ||
+    state.isShuffling ||
+    typeof state.turnsUntilEnd === 'number'
+      ? []
+      : getClaimableStones(state.cards, state.stones, props.playerIndex).filter(
+          (i) => i !== claimingRank,
+        )
+
   return (
-    <div className="w-full flex items-center gap-board justify-center py-4">
-      <button type="button" className={`wishing-stone invisible w-0`}>
-        0
-      </button>
-      {state.stones[props.playerIndex].map((i) => (
-        <button key={`owned-${i}`} type="button" className="wishing-stone">
-          {i}
-        </button>
-      ))}
-      {isLocalPlayer && state.claimingRank !== null && (
-        <button
-          key={`claiming-${state.claimingRank}`}
-          type="button"
-          className="wishing-stone claiming">
-          {state.claimingRank}
-        </button>
-      )}
-      {!state.isShuffling &&
-        claimableStones.map((i) => (
+    <div
+      className="w-full flex items-center gap-board justify-center py-4"
+      style={{ minHeight: 'calc(var(--base-size) * 0.51 + 2rem)' }}>
+      {WISHING_STONE_RANKS.map((rank) => {
+        const isOwned = state.stones[props.playerIndex].includes(rank)
+        const isClaiming = claimingRank === rank
+        const isClaimable = activeClaimableStones.includes(rank)
+        const stateClass = isOwned
+          ? 'claimed'
+          : isClaiming
+            ? 'claiming'
+            : isClaimable
+              ? 'claimable'
+              : ''
+
+        return (
           <button
-            key={`claimable-${i}`}
+            key={`stone-${rank}`}
             type="button"
-            className="wishing-stone claimable"
-            onClick={() => state.claimWishingStone(i)}>
-            {i}
+            className={`wishing-stone ${stateClass}`}
+            onClick={() => state.claimWishingStone(rank)}
+            disabled={!isClaimable}>
+            {rank}
           </button>
-        ))}
+        )
+      })}
     </div>
   )
 }

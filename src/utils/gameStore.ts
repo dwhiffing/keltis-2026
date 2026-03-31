@@ -10,9 +10,9 @@ import {
   NUM_SUITS,
 } from './constants'
 import {
+  clearGameState,
   type MoveData,
   type SavedGameState,
-  clearGameState,
   saveGameState,
   setOnDisconnect,
   setOnGameResume,
@@ -154,6 +154,8 @@ export const useGameStore = create<GameStore>((set, get) => {
       const s = NUM_SUITS
 
       if (move.phase === 'claim-stone') {
+        const { turnsUntilEnd } = get()
+        if (turnsUntilEnd !== null && turnsUntilEnd <= 2) return
         set({
           stoneClaim: { rank: move.rank, cardsDrawn: 0, discardPiles: [] },
         })
@@ -301,11 +303,14 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
     closeInstructions: () => set({ showInstructionsModal: false }),
     claimWishingStone: (index: number) => {
+      // biome-ignore format: okay
+      const { stoneClaim, currentPlayerIndex, localPlayerIndex, turnPhase, turnsUntilEnd, stones, } = get()
       const invalid =
-        get().stoneClaim ||
-        get().currentPlayerIndex !== get().localPlayerIndex ||
-        get().turnPhase !== 0 ||
-        get().stones.flat().includes(index)
+        stoneClaim ||
+        currentPlayerIndex !== localPlayerIndex ||
+        turnPhase !== 0 ||
+        typeof turnsUntilEnd === 'number' ||
+        stones.flat().includes(index)
       if (invalid) return
 
       set({ stoneClaim: { rank: index, cardsDrawn: 0, discardPiles: [] } })
