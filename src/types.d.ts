@@ -21,6 +21,7 @@ interface CardShallowState {
   opacity: number
   disabled: boolean
   cardPileIndex: number
+  zIndex: number
   suit: Suit
   rank: Rank
   transitionDelay: number

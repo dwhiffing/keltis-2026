@@ -29,7 +29,7 @@ import {
 const Card = ({ cardId }: { cardId: number }) => {
   const store = useGameStore(useShallow(getShallowCardState(cardId)))
   const [isActive, setIsActive] = useState(false)
-  const [zIndex, setZIndex] = useState(store.cardPileIndex)
+  const [zIndex, setZIndex] = useState(store.zIndex)
   const [hasMounted, setHasMounted] = useState(false)
   useWindowEvent('resize', debounce(useForceUpdate(), 100))
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -39,10 +39,10 @@ const Card = ({ cardId }: { cardId: number }) => {
   useEffect(() => {
     const timeout = setTimeout(() => {
       setIsActive(store.isActive)
-      setZIndex(store.cardPileIndex)
+      setZIndex(store.zIndex)
     }, CARD_TRANSITION_DURATION / 2)
     return () => clearTimeout(timeout)
-  }, [isActive, store.cardPileIndex, store.isActive])
+  }, [isActive, store.zIndex, store.isActive])
 
   if (!hasMounted) return null
 
@@ -126,6 +126,7 @@ const getShallowCardState =
       ? 1
       : (isActive ? 1.15 : 1) * (isOwnHand ? 1.8 : 1)
     const rotate = isDragging || isShuffling ? 0 : rotatePos
+    const zIndex = cardPileIndex + (pileType === 'hand' ? 9000 : 0)
 
     return {
       x,
@@ -143,6 +144,7 @@ const getShallowCardState =
         (state.turnPhase === 1 ||
           (state.stoneClaim !== null && card.rank !== state.stoneClaim.rank)),
       cardPileIndex,
+      zIndex,
       suit,
       rank,
       transitionDelay:

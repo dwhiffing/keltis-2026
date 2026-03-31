@@ -281,9 +281,8 @@ export const useGameStore = create<GameStore>((set, get) => {
       const timeDiff = Date.now() - cursorDownAt
 
       if (activeCard && (posDiff > 5 || timeDiff > 300)) {
-        const { width, height } = getPileSize()
-        const x = clientX + (width / 2 - cursorDelta.x)
-        const y = clientY + (height / 2 - cursorDelta.y)
+        const x = clientX
+        const y = clientY
         const targetPileIndex = getPileAtPoint(x, y, cards)
         moveCard(activeCard, targetPileIndex, usIndex, get, set)
       }
