@@ -89,17 +89,19 @@
     @apply aspect-square rounded-full flex items-center justify-center font-bold transition-all duration-500 opacity-0;
     width: calc(var(--base-size) * 0.51);
     font-size: calc(var(--base-size) * 0.3);
-    border-width: calc(var(--base-size) * 0.025);
+    border-width: calc(var(--base-size) * 0.02);
     &.claimable {
       @apply shadow-none cursor-pointer opacity-50 border-white text-white;
     }
     &.claimed {
       @apply opacity-100;
     }
-    &.claimed, &.claiming {
-      @apply bg-yellow-400 border-yellow-600 shadow-md text-yellow-900;
+    &.claimed,
+    &.claiming {
+      @apply bg-[#ce91df] border-[#7c438c] text-[#7c438c];
+      box-shadow: 0 0.2rem 0.2rem rgba(36, 18, 44, 0.35);
     }
-    
+
     &.claiming {
       opacity: 0.4;
     }
