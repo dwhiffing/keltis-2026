@@ -1,16 +1,245 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useGameStore } from '../utils/gameStore'
 import { Modal } from './Modal'
+
+const ScoringTable = ({
+  allowZero,
+  scores,
+  topRowLabel,
+  bottomRowLabel,
+}: {
+  allowZero?: boolean
+  scores: number[]
+  topRowLabel?: string
+  bottomRowLabel?: string
+}) => {
+  const showRowLabels = Boolean(topRowLabel || bottomRowLabel)
+
+  return (
+    <div
+      className={`rounded border border-white/20 overflow-hidden text-sm lg:text-base ${showRowLabels ? 'grid grid-cols-[auto_1fr]' : ''}`}>
+      {showRowLabels ? (
+        <>
+          <div className="w-24 px-3 py-1 bg-white/5 border-r border-white/20 font-semibold">
+            {topRowLabel ?? ''}
+          </div>
+          <div
+            className="grid bg-white/5"
+            style={{
+              gridTemplateColumns: `repeat(${scores.length}, minmax(0, 1fr))`,
+            }}>
+            {scores.map((_score, index) => (
+              <div
+                key={`top-${index}`}
+                className={`px-2 py-1 font-black text-center border-white/20 ${index === scores.length - 1 ? '' : 'border-r'}`}>
+                {index + (allowZero ? 0 : 1)}
+                {index === scores.length - 1 ? '+' : ''}
+              </div>
+            ))}
+          </div>
+          <div className="w-24 px-3 py-1 border-r border-t border-white/20 font-semibold">
+            {bottomRowLabel ?? ''}
+          </div>
+          <div
+            className="grid border-t border-white/20 font-semibold"
+            style={{
+              gridTemplateColumns: `repeat(${scores.length}, minmax(0, 1fr))`,
+            }}>
+            {scores.map((score, index) => (
+              <div
+                key={`bottom-${index}`}
+                className={`px-2 py-1 font-black text-center border-white/20 ${index === scores.length - 1 ? '' : 'border-r'} ${score <= 0 ? 'text-red-300' : ''}`}>
+                {score}
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <>
+          <div
+            className="grid bg-white/5"
+            style={{
+              gridTemplateColumns: `repeat(${scores.length}, minmax(0, 1fr))`,
+            }}>
+            {scores.map((_score, index) => (
+              <div
+                key={`top-${index}`}
+                className={`px-2 py-1 text-center border-white/20 ${index === scores.length - 1 ? '' : 'border-r'}`}>
+                {index + (allowZero ? 0 : 1)}
+                {index === scores.length - 1 ? '+' : ''}
+              </div>
+            ))}
+          </div>
+          <div
+            className="grid border-t border-white/20 font-semibold"
+            style={{
+              gridTemplateColumns: `repeat(${scores.length}, minmax(0, 1fr))`,
+            }}>
+            {scores.map((score, index) => (
+              <div
+                key={`bottom-${index}`}
+                className={`px-2 py-1 text-center border-white/20 ${index === scores.length - 1 ? '' : 'border-r'}`}>
+                {score}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
 
 const INSTRUCTION_PAGES = [
   {
     title: 'Welcome to Moonstone!',
     content: (
       <>
-        The goal of the game is to build the largest suited piles you can for
-        points. Use pairs to claim moonstones for bonus points. The player with
-        the highest score wins!
+        <div className="flex flex-col gap-4">
+          <p>
+            Your goal is to make <b>suited ordered piles</b> to gain points. Use{' '}
+            <b>pairs</b> to claim <b>moonstones</b> for bonus points.
+          </p>
+          <p>
+            On your turn, <b>play a card</b>, then <b>draw a card</b>.
+          </p>
+          <p>
+            The game ends when the <b>deck is empty</b>, each player plays{' '}
+            <b>2 final cards</b>.
+          </p>
+          <p>
+            There are <b>5 suits</b> ranked <b>0-10</b> or <b>X</b>: one each of{' '}
+            <b>0</b>/<b>1</b>/<b>2</b> and <b>8</b>/<b>9</b>/<b>10</b>, two each
+            of <b>3</b>/<b>4</b>/<b>5</b>/<b>6</b>/<b>7</b>/<b>X</b>. There are
+            also <b>11 wild cards</b> ranked <b>0-10</b>.
+          </p>
+          <p>
+            <b>30</b> of the <b>101</b> cards are removed before dealing{' '}
+            <b>8 cards</b> to each player
+          </p>
+        </div>
       </>
+    ),
+  },
+  {
+    title: 'Play a card',
+    content: (
+      <>
+        <div className="flex flex-col gap-2">
+          <p>
+            Either play a card in one of the <b>5 tableau piles</b> in front of
+            you:
+          </p>
+          <ul>
+            <li>
+              It must be <b>one suit</b> and either <b>ascend</b> or{' '}
+              <b>descend</b>.
+            </li>
+            <li className="font-bold">
+              <span className="font-normal">Eg,</span> 3
+              <span className="text-[#6ad195]">♠</span>, 4
+              <span className="text-[#6ad195]">♠</span>, 6
+              <span className="text-[#6ad195]">♠</span>, 6
+              <span className="text-[#6ad195]">♠</span>, 7
+              <span className="text-[#6ad195]">♠</span>
+            </li>
+            <li className="font-bold">
+              <span className="font-normal">Or,</span> 10
+              <span className="text-[#6ad195]">♠</span>, 9
+              <span className="text-[#6ad195]">♠</span>, 7
+              <span className="text-[#6ad195]">♠</span>, 7
+              <span className="text-[#6ad195]">♠</span>, 6
+              <span className="text-[#6ad195]">♠</span>
+            </li>
+          </ul>
+          <p>
+            Or play into one of the <b>4 discard piles</b> next to the deck.
+          </p>
+        </div>
+        <div className="flex flex-col gap-1 mt-3">
+          <h2 className="text-2xl font-bold mb-1">Draw a card</h2>
+          <p>
+            Either draw from the <b>deck</b>, or draw from one of the{' '}
+            <b>4 discard piles</b>. You cannot draw a card you{' '}
+            <b>discarded this turn</b>.
+          </p>
+        </div>
+      </>
+    ),
+  },
+  {
+    title: 'Wild cards',
+    content: (
+      <>
+        <p>
+          <b>Black cards</b> are <b>wild</b>, playable in <b>any pile</b> on a
+          card of <b>equal rank</b>.
+        </p>
+        <ul>
+          <li className="font-bold">
+            <span className="font-normal">Eg,</span> 10
+            <span className="text-[#6ad195]">♠</span>, 9
+            <span className="text-[#6ad195]">♠</span>, 6
+            <span className="text-[#6ad195]">♠</span>, 6
+            <span className="text-[#222] leading-0 text-3xl relative top-[2.5px]">
+              ●
+            </span>
+            , 4<span className="text-[#6ad195]">♠</span>
+          </li>
+        </ul>
+        <div>
+          <h2 className="text-2xl font-bold mt-3 mb-1">End cards</h2>
+          <p>
+            <b>End cards</b> are <b>rank X</b>. Only <b>another end card</b> can
+            be played on top.
+          </p>
+          <ul>
+            <li className="font-bold">
+              <span className="font-normal">Eg,</span> 9
+              <span className="text-[#6ad195]">♠</span>, 6
+              <span className="text-[#6ad195]">♠</span>, 5
+              <span className="text-[#6ad195]">♠</span>, X
+              <span className="text-[#6ad195]">♠</span>, X
+              <span className="text-[#6ad195]">♠</span>
+            </li>
+          </ul>
+        </div>
+
+        <div className="flex flex-col mt-3">
+          <h2 className="text-2xl font-bold mb-1">Moonstones</h2>
+          <p>
+            If you have <b>2 cards of equal rank</b> and the{' '}
+            <b>moonstone is unclaimed</b>, <b>tap it</b> to claim it. Then{' '}
+            <b>discard both cards</b> and <b>draw 2 new cards</b>.
+          </p>
+        </div>
+      </>
+    ),
+  },
+  {
+    title: 'Scoring',
+    content: (
+      <div className="flex flex-col gap-3">
+        <p>
+          Short piles{' '}
+          <b>
+            <i>lose points</i>
+          </b>
+          . You need <b>at least 4</b> cards to gain points.
+        </p>
+        <h2 className="font-bold text-2xl -mb-1">Piles</h2>
+        <ScoringTable
+          topRowLabel="# of Cards"
+          bottomRowLabel="Points"
+          scores={[-4, -3, -2, 1, 2, 3, 6, 7, 10]}
+        />
+        <h2 className="font-bold text-2xl -mb-1">Moonstones</h2>
+        <ScoringTable
+          allowZero
+          topRowLabel="# of Stones"
+          bottomRowLabel="Points"
+          scores={[-4, -1, 0, 4, 6, 10]}
+        />
+      </div>
     ),
   },
 ]
@@ -40,28 +269,21 @@ export const InstructionsModal = () => {
     closeInstructions()
   }
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (showInstructionsModal) setCurrentPage(0)
-  }, [showInstructionsModal])
-
   return (
     <Modal show={showInstructionsModal} onClose={handleClose}>
-      <div
-        className="flex flex-col justify-between bg-surface rounded-lg shadow-xl w-[calc(100vw-40px)] min-w-90 max-w-125 min-h-72 p-4 lg:p-6"
-        onClick={handleNext}>
+      <div className="flex flex-col justify-between bg-surface rounded-lg shadow-xl w-[calc(100vw-40px)] min-w-90 max-w-125 min-h-110 md:min-h-94 p-4 lg:p-6">
         <div className="flex-1">
-          <h2 className="text-2xl lg:text-3xl mb-4 font-bold">
+          <h2 className="text-2xl lg:text-3xl font-bold mb-1">
             {INSTRUCTION_PAGES[currentPage].title}
           </h2>
-          <p className="text-base lg:text-lg leading-relaxed whitespace-pre-line">
+          <div className="text-base lg:text-lg leading-relaxed whitespace-pre-line">
             {INSTRUCTION_PAGES[currentPage].content}
-          </p>
+          </div>
         </div>
 
         <div className="flex items-center justify-between mt-6">
           <button
-            className={currentPage === 0 ? 'opacity-0' : 'opacity-100'}
+            className={`button ${currentPage === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
             onClick={(e) => {
               e.stopPropagation()
               handlePrev()
@@ -79,7 +301,7 @@ export const InstructionsModal = () => {
             ))}
           </div>
 
-          <button onClick={handleNext}>
+          <button className="button" onClick={handleNext}>
             {currentPage === INSTRUCTION_PAGES.length - 1 ? 'Play' : 'Next'}
           </button>
         </div>
