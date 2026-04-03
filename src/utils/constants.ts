@@ -44,6 +44,7 @@ const NEUTRAL_RANK_COUNTS: [Rank, number][] = [
   [7, 1],
   [8, 1],
   [9, 1],
+  [10, 1],
 ]
 const NEUTRAL_RANKS_EXPANDED = NEUTRAL_RANK_COUNTS.flatMap(([rank, count]) =>
   Array.from({ length: count }, () => rank),
