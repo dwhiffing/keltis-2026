@@ -1,0 +1,47 @@
+import { useGameStore } from '../utils/gameStore'
+import { Modal } from './Modal'
+
+const OPTIONS = [
+  {
+    key: 'short' as const,
+    label: 'Quick',
+    description: '40 cards',
+  },
+  {
+    key: 'medium' as const,
+    label: 'Normal',
+    description: '55 cards',
+  },
+  {
+    key: 'long' as const,
+    label: 'Epic',
+    description: '70 cards',
+  },
+]
+
+export function GameLengthModal() {
+  const show = useGameStore((s) => s.showGameLengthModal)
+  const startWithGameLength = useGameStore((s) => s.startWithGameLength)
+  const close = useGameStore((s) => s.closeGameLengthModal)
+
+  return (
+    <Modal show={show} onClose={close}>
+      <div className="flex flex-col gap-4 bg-surface rounded-lg shadow-xl w-[calc(100vw-40px)] min-w-72 max-w-sm p-6">
+        <h2 className="text-2xl font-bold text-center">Game Length</h2>
+        <div className="flex flex-col gap-2">
+          {OPTIONS.map((option) => (
+            <button
+              key={option.key}
+              className="button w-full py-2 px-4 rounded bg-primary text-white font-bold"
+              onClick={() => startWithGameLength(option.key)}>
+              {option.label}
+              <span className="ml-2 opacity-80 font-medium text-sm">
+                ({option.description})
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </Modal>
+  )
+}

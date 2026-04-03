@@ -5,6 +5,7 @@ import { NUM_DISCARD_PILES, NUM_SUITS } from '../utils/constants'
 import { useGameStore } from '../utils/gameStore'
 import { useMultiplayerStore } from '../utils/multiplayerStore'
 import Card from './Card'
+import { GameLengthModal } from './GameLengthModal'
 import { GameOverModal } from './GameOverModal'
 import { Header } from './Header'
 import { InstructionsModal } from './InstructionsModal'
@@ -133,6 +134,7 @@ function App() {
       </div>
 
       <InstructionsModal />
+      <GameLengthModal />
       <GameOverModal />
       <LobbyModal key={showLobbyModal ? 'show' : 'hide'} />
     </div>

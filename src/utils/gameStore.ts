@@ -11,12 +11,14 @@ import {
 } from './constants'
 import {
   clearGameState,
+  type GameLength,
   type MoveData,
   type SavedGameState,
   saveGameState,
   setOnDisconnect,
   setOnGameResume,
   setOnGameStart,
+  setOnHostReadyToStart,
   setOnRemoteMove,
   useMultiplayerStore,
 } from './multiplayerStore'
@@ -41,16 +43,24 @@ export interface GameState {
     cardsDrawn: number
     discardPiles: number[]
   } | null
+  gameLength: GameLength
+  showGameLengthModal: boolean
   showInstructionsModal: boolean
 }
 
 interface GameStore extends GameState {
   newGame: () => void
-  startMultiplayerGame: (seed: number, localPlayerIndex: 0 | 1) => void
+  startMultiplayerGame: (
+    seed: number,
+    localPlayerIndex: 0 | 1,
+    gameLength: GameLength,
+  ) => void
   restoreMultiplayerGame: (
     state: SavedGameState,
     localPlayerIndex: 0 | 1,
   ) => void
+  startWithGameLength: (gameLength: GameLength) => void
+  closeGameLengthModal: () => void
   applyRemoteMove: (move: MoveData) => void
   onMouseDown: (params: MouseParams) => void
   onMouseUp: (params: MouseParams) => void
@@ -71,9 +81,13 @@ let dealTimeout: number | null = null
 let aiTurnTimeout: number | null = null
 
 export const useGameStore = create<GameStore>((set, get) => {
-  const startGame = (seed?: number, localPlayerIndex: 0 | 1 = 0) => {
-    const { cards } = generateCards(seed)
-    set({ ...initializeGameState(), cards, localPlayerIndex })
+  const startGame = (
+    seed?: number,
+    localPlayerIndex: 0 | 1 = 0,
+    gameLength: GameLength = 'medium',
+  ) => {
+    const { cards } = generateCards(seed, gameLength)
+    set({ ...initializeGameState(), cards, localPlayerIndex, gameLength })
     if (dealTimeout) clearTimeout(dealTimeout)
     if (aiTurnTimeout) clearTimeout(aiTurnTimeout)
     dealTimeout = setTimeout(() => {
@@ -91,11 +105,22 @@ export const useGameStore = create<GameStore>((set, get) => {
     const { mode } = useMultiplayerStore.getState()
     if (mode === 'multiplayer') {
       if (get().localPlayerIndex === 0) {
-        useMultiplayerStore.getState().startNewGame()
+        set({ showGameLengthModal: true })
       }
     } else {
-      startGame()
+      set({ showGameLengthModal: true })
     }
+  }
+
+  const startWithGameLength = (gameLength: GameLength) => {
+    const { mode, startNewGame } = useMultiplayerStore.getState()
+    if (mode === 'multiplayer' && get().localPlayerIndex === 0) {
+      set({ showGameLengthModal: false, gameLength })
+      startNewGame(gameLength)
+      return
+    }
+    set({ showGameLengthModal: false })
+    startGame(undefined, 0, gameLength)
   }
 
   const hasSeenInstructions =
@@ -126,8 +151,13 @@ export const useGameStore = create<GameStore>((set, get) => {
     ...initializeGameState(),
 
     newGame,
-    startMultiplayerGame: (seed: number, localPlayerIndex: 0 | 1) =>
-      startGame(seed, localPlayerIndex),
+    startMultiplayerGame: (
+      seed: number,
+      localPlayerIndex: 0 | 1,
+      gameLength: GameLength,
+    ) => startGame(seed, localPlayerIndex, gameLength),
+    startWithGameLength,
+    closeGameLengthModal: () => set({ showGameLengthModal: false }),
     restoreMultiplayerGame: (
       saved: SavedGameState,
       localPlayerIndex: 0 | 1,
@@ -334,6 +364,8 @@ function initializeGameState(): Omit<GameState, 'cards'> {
     gameOver: false,
     stones: [[], []],
     stoneClaim: null,
+    gameLength: 'medium',
+    showGameLengthModal: false,
     showInstructionsModal: false,
   }
 }
@@ -341,10 +373,20 @@ function initializeGameState(): Omit<GameState, 'cards'> {
 function generateCards(seedInput?: number): {
   cards: CardType[]
   seed: number
-} {
+}
+function generateCards(
+  seedInput: number | undefined,
+  gameLength: GameLength,
+): {
+  cards: CardType[]
+  seed: number
+}
+function generateCards(seedInput?: number, gameLength: GameLength = 'medium') {
   const seed = seedInput ?? Date.now()
   const shuffledCards = seededShuffle(CARDS, seed)
-  const dealtCards = shuffledCards.slice(30)
+  const cardsToRemove =
+    gameLength === 'short' ? 45 : gameLength === 'long' ? 15 : 30
+  const dealtCards = shuffledCards.slice(cardsToRemove)
   // const dealtCards = shuffledCards.slice(82)
   const handCardCount = HAND_SIZE * 2
   const ourHand = NUM_SUITS * 2 + NUM_DISCARD_PILES + 2
@@ -755,8 +797,13 @@ const isCardPickable = (card: CardType, localPlayerIndex: 0 | 1): boolean => {
 
 // Wire multiplayer callbacks after both stores are initialised
 setOnRemoteMove((move) => useGameStore.getState().applyRemoteMove(move))
-setOnGameStart((seed, localPlayerIndex) =>
-  useGameStore.getState().startMultiplayerGame(seed, localPlayerIndex),
+setOnGameStart((seed, localPlayerIndex, gameLength) =>
+  useGameStore
+    .getState()
+    .startMultiplayerGame(seed, localPlayerIndex, gameLength),
+)
+setOnHostReadyToStart(() =>
+  useGameStore.setState({ showGameLengthModal: true }),
 )
 setOnGameResume((state, localPlayerIndex) =>
   useGameStore.getState().restoreMultiplayerGame(state, localPlayerIndex),
