@@ -3,33 +3,40 @@ import { Modal } from './Modal'
 
 const OPTIONS = [
   {
+    key: 'test' as const,
+    label: 'Test',
+    description: 'Remove 83 cards',
+  },
+  {
     key: 'short' as const,
-    label: 'Quick',
-    description: '40 cards',
+    label: 'Short',
+    description: 'Remove 45 cards',
   },
   {
     key: 'medium' as const,
-    label: 'Normal',
-    description: '55 cards',
+    label: 'Medium',
+    description: 'Remove 30 cards',
   },
   {
     key: 'long' as const,
-    label: 'Epic',
-    description: '70 cards',
+    label: 'Long',
+    description: 'Remove 15 cards',
   },
 ]
 
 export function GameLengthModal() {
   const show = useGameStore((s) => s.showGameLengthModal)
   const startWithGameLength = useGameStore((s) => s.startWithGameLength)
-  const close = useGameStore((s) => s.closeGameLengthModal)
 
   return (
-    <Modal show={show} onClose={close}>
+    <Modal show={show}>
       <div className="flex flex-col gap-4 bg-surface rounded-lg shadow-xl w-[calc(100vw-40px)] min-w-72 max-w-sm p-6">
         <h2 className="text-2xl font-bold text-center">Game Length</h2>
         <div className="flex flex-col gap-2">
-          {OPTIONS.map((option) => (
+          {OPTIONS.filter(
+            (o) =>
+              o.key !== 'test' || window.location.href.includes('localhost'),
+          ).map((option) => (
             <button
               key={option.key}
               className="button w-full py-2 px-4 rounded bg-primary text-white font-bold"

@@ -106,12 +106,7 @@ export function LobbyModal() {
             </div>
             <button
               className="button w-full py-2 px-4 rounded bg-on-surface text-white"
-              onClick={() => {
-                useMultiplayerStore.setState({
-                  lobbyPhase: 'joining',
-                  error: null,
-                })
-              }}>
+              onClick={closeLobby}>
               Cancel
             </button>
           </div>

@@ -1,7 +1,7 @@
 import Peer, { type DataConnection, type PeerOptions } from 'peerjs'
 import { create } from 'zustand'
 
-const STORAGE_KEY = 'keltis-mp-state'
+const STORAGE_KEY = 'moonstone-mp-state'
 
 function readTurnConfig() {
   return {
@@ -62,6 +62,8 @@ export type MoveData =
   | { phase: 'draw'; sourcePileIndex: number }
   | { phase: 'claim-stone'; rank: number }
 
+export type GameLength = 'test' | 'short' | 'medium' | 'long'
+
 export interface SavedGameState {
   cards: CardType[]
   currentPlayerIndex: 0 | 1
@@ -79,8 +81,18 @@ export interface SavedGameState {
 }
 
 type PeerMessage =
-  | { type: 'game-start'; seed: number; wins: [number, number] }
-  | { type: 'new-game'; seed: number; wins: [number, number] }
+  | {
+      type: 'game-start'
+      seed: number
+      wins: [number, number]
+      gameLength: GameLength
+    }
+  | {
+      type: 'new-game'
+      seed: number
+      wins: [number, number]
+      gameLength: GameLength
+    }
   | { type: 'game-resume'; state: SavedGameState }
   | { type: 'move'; move: MoveData }
   | { type: 'leave' }
@@ -108,7 +120,7 @@ interface MultiplayerStore extends MultiplayerState {
   closeLobby: () => void
   hostGame: (code?: string) => void
   joinGame: (code: string) => void
-  startNewGame: () => void
+  startNewGame: (gameLength?: GameLength) => void
   recordResult: (iWon: boolean) => void
   sendMove: (move: MoveData) => void
   disconnect: () => void
@@ -121,16 +133,17 @@ let conn: DataConnection | null = null
 // Callbacks wired up by gameStore after both stores are created
 let onRemoteMoveCallback: ((move: MoveData) => void) | null = null
 let onGameStartCallback:
-  | ((seed: number, localPlayerIndex: 0 | 1) => void)
+  | ((seed: number, localPlayerIndex: 0 | 1, gameLength: GameLength) => void)
   | null = null
 let onGameResumeCallback:
   | ((state: SavedGameState, localPlayerIndex: 0 | 1) => void)
   | null = null
 
 let onDisconnectCallback: (() => void) | null = null
-let reconnectInterval: ReturnType<typeof setInterval> | null = null
+let onHostReadyToStartCallback: (() => void) | null = null
 let intentionalDisconnect = false
 let remoteLeft = false
+let reconnectInterval: number | null = null
 
 function watchConnection(c: DataConnection) {
   const pc = c.peerConnection
@@ -149,9 +162,13 @@ export const setOnRemoteMove = (fn: (move: MoveData) => void) => {
 }
 
 export const setOnGameStart = (
-  fn: (seed: number, localPlayerIndex: 0 | 1) => void,
+  fn: (seed: number, localPlayerIndex: 0 | 1, gameLength: GameLength) => void,
 ) => {
   onGameStartCallback = fn
+}
+
+export const setOnHostReadyToStart = (fn: () => void) => {
+  onHostReadyToStartCallback = fn
 }
 
 export const setOnGameResume = (
@@ -216,7 +233,7 @@ function generateCode(): string {
 }
 
 function peerIdFromCode(code: string): string {
-  return `keltis26-${code.toUpperCase()}`
+  return `ms-${code.toUpperCase()}`
 }
 
 function handleConnClose() {
@@ -311,9 +328,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
           set({ wins: saved.wins })
           onGameResumeCallback?.(saved, 0) // host is always player 0
         } else {
-          const seed = Date.now()
-          conn!.send({ type: 'game-start', seed, wins } satisfies PeerMessage)
-          onGameStartCallback?.(seed, 0) // host is always player 0
+          onHostReadyToStartCallback?.()
         }
         set({
           peerConnected: true,
@@ -391,7 +406,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       conn.on('data', (raw) => {
         const msg = raw as PeerMessage
         if (msg.type === 'game-start' || msg.type === 'new-game') {
-          onGameStartCallback?.(msg.seed, 1) // guest is always player 1
+          onGameStartCallback?.(msg.seed, 1, msg.gameLength) // guest is always player 1
           set({
             gameCode: code.toUpperCase(),
             peerConnected: true,
@@ -452,12 +467,17 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
     conn?.send({ type: 'move', move } satisfies PeerMessage)
   },
 
-  startNewGame: () => {
+  startNewGame: (gameLength: GameLength = 'medium') => {
     clearGameState()
     const seed = Date.now()
     const wins = get().wins
-    conn?.send({ type: 'new-game', seed, wins } satisfies PeerMessage)
-    onGameStartCallback?.(seed, 0)
+    conn?.send({
+      type: 'new-game',
+      seed,
+      wins,
+      gameLength,
+    } satisfies PeerMessage)
+    onGameStartCallback?.(seed, 0, gameLength)
   },
 
   disconnect: () => {

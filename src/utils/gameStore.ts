@@ -102,9 +102,13 @@ export const useGameStore = create<GameStore>((set, get) => {
   }
 
   const newGame = () => {
-    const { mode } = useMultiplayerStore.getState()
+    const { mode, startNewGame } = useMultiplayerStore.getState()
     if (mode === 'multiplayer') {
       if (get().localPlayerIndex === 0) {
+        if (get().gameOver) {
+          startNewGame(get().gameLength)
+          return
+        }
         set({ showGameLengthModal: true })
       }
     } else {
@@ -136,6 +140,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         document.documentElement
           .requestFullscreen({ navigationUI: 'hide' })
           .then(() =>
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (screen.orientation as any).lock('portrait').catch(() => {}),
           )
     })
@@ -385,7 +390,13 @@ function generateCards(seedInput?: number, gameLength: GameLength = 'medium') {
   const seed = seedInput ?? Date.now()
   const shuffledCards = seededShuffle(CARDS, seed)
   const cardsToRemove =
-    gameLength === 'short' ? 45 : gameLength === 'long' ? 15 : 30
+    gameLength === 'test'
+      ? 83
+      : gameLength === 'short'
+        ? 45
+        : gameLength === 'long'
+          ? 15
+          : 30
   const dealtCards = shuffledCards.slice(cardsToRemove)
   // const dealtCards = shuffledCards.slice(82)
   const handCardCount = HAND_SIZE * 2
