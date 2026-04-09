@@ -54,6 +54,7 @@ interface GameStore extends GameState {
     seed: number,
     localPlayerIndex: 0 | 1,
     gameLength: GameLength,
+    firstPlayerIndex: 0 | 1,
   ) => void
   restoreMultiplayerGame: (
     state: SavedGameState,
@@ -85,9 +86,16 @@ export const useGameStore = create<GameStore>((set, get) => {
     seed?: number,
     localPlayerIndex: 0 | 1 = 0,
     gameLength: GameLength = 'medium',
+    firstPlayerIndex: 0 | 1 = 0,
   ) => {
     const { cards } = generateCards(seed, gameLength)
-    set({ ...initializeGameState(), cards, localPlayerIndex, gameLength })
+    set({
+      ...initializeGameState(),
+      cards,
+      localPlayerIndex,
+      gameLength,
+      currentPlayerIndex: firstPlayerIndex,
+    })
     if (dealTimeout) clearTimeout(dealTimeout)
     if (aiTurnTimeout) clearTimeout(aiTurnTimeout)
     dealTimeout = setTimeout(() => {
@@ -160,7 +168,8 @@ export const useGameStore = create<GameStore>((set, get) => {
       seed: number,
       localPlayerIndex: 0 | 1,
       gameLength: GameLength,
-    ) => startGame(seed, localPlayerIndex, gameLength),
+      firstPlayerIndex: 0 | 1,
+    ) => startGame(seed, localPlayerIndex, gameLength, firstPlayerIndex),
     startWithGameLength,
     closeGameLengthModal: () => set({ showGameLengthModal: false }),
     restoreMultiplayerGame: (
@@ -811,10 +820,10 @@ const isCardPickable = (card: CardType, localPlayerIndex: 0 | 1): boolean => {
 
 // Wire multiplayer callbacks after both stores are initialised
 setOnRemoteMove((move) => useGameStore.getState().applyRemoteMove(move))
-setOnGameStart((seed, localPlayerIndex, gameLength) =>
+setOnGameStart((seed, localPlayerIndex, gameLength, firstPlayerIndex) =>
   useGameStore
     .getState()
-    .startMultiplayerGame(seed, localPlayerIndex, gameLength),
+    .startMultiplayerGame(seed, localPlayerIndex, gameLength, firstPlayerIndex),
 )
 setOnHostReadyToStart(() =>
   useGameStore.setState({ showGameLengthModal: true }),
@@ -842,6 +851,7 @@ useGameStore.subscribe((state) => {
     turnsUntilEnd: state.turnsUntilEnd,
     gameOver: state.gameOver,
     wins: mp.wins,
+    lastWinnerIndex: mp.lastWinnerIndex,
     stones: state.stones,
     stoneClaim: state.stoneClaim,
   })

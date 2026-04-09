@@ -123,6 +123,7 @@ export interface SavedGameState {
   turnsUntilEnd: number | null
   gameOver: boolean
   wins: [number, number]
+  lastWinnerIndex?: 0 | 1 | null
   stones: [number[], number[]]
   stoneClaim: {
     rank: number
@@ -136,12 +137,16 @@ type PeerMessage =
       type: 'game-start'
       seed: number
       wins: [number, number]
+      lastWinnerIndex: 0 | 1 | null
+      firstPlayerIndex: 0 | 1
       gameLength: GameLength
     }
   | {
       type: 'new-game'
       seed: number
       wins: [number, number]
+      lastWinnerIndex: 0 | 1 | null
+      firstPlayerIndex: 0 | 1
       gameLength: GameLength
     }
   | { type: 'game-resume'; state: SavedGameState }
@@ -164,6 +169,7 @@ export interface MultiplayerState {
   reconnecting: boolean
   error: string | null
   wins: [number, number]
+  lastWinnerIndex: 0 | 1 | null
   showNetworkDebug: boolean
   networkDebugLines: string[]
 }
@@ -188,7 +194,12 @@ let conn: DataConnection | null = null
 // Callbacks wired up by gameStore after both stores are created
 let onRemoteMoveCallback: ((move: MoveData) => void) | null = null
 let onGameStartCallback:
-  | ((seed: number, localPlayerIndex: 0 | 1, gameLength: GameLength) => void)
+  | ((
+      seed: number,
+      localPlayerIndex: 0 | 1,
+      gameLength: GameLength,
+      firstPlayerIndex: 0 | 1,
+    ) => void)
   | null = null
 let onGameResumeCallback:
   | ((state: SavedGameState, localPlayerIndex: 0 | 1) => void)
@@ -230,7 +241,12 @@ export const setOnRemoteMove = (fn: (move: MoveData) => void) => {
 }
 
 export const setOnGameStart = (
-  fn: (seed: number, localPlayerIndex: 0 | 1, gameLength: GameLength) => void,
+  fn: (
+    seed: number,
+    localPlayerIndex: 0 | 1,
+    gameLength: GameLength,
+    firstPlayerIndex: 0 | 1,
+  ) => void,
 ) => {
   onGameStartCallback = fn
 }
@@ -341,6 +357,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
   reconnecting: false,
   error: null,
   wins: [0, 0],
+  lastWinnerIndex: null,
   showNetworkDebug: getDebugPanelInitialState(),
   networkDebugLines: [],
   openLobby: (phase: Exclude<LobbyPhase, 'connecting'>) =>
@@ -370,7 +387,12 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       lobbyPhase: 'hosting',
       gameCode: code,
       error: null,
-      ...(existingCode ? {} : { wins: [0, 0] as [number, number] }),
+      ...(existingCode
+        ? {}
+        : {
+            wins: [0, 0] as [number, number],
+            lastWinnerIndex: null,
+          }),
     })
     setUrlParam('host', code)
 
@@ -398,7 +420,10 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
             type: 'game-resume',
             state: { ...saved, wins },
           } satisfies PeerMessage)
-          set({ wins: saved.wins })
+          set({
+            wins: saved.wins,
+            lastWinnerIndex: saved.lastWinnerIndex ?? null,
+          })
           onGameResumeCallback?.(saved, 0) // host is always player 0
         } else {
           onHostReadyToStartCallback?.()
@@ -451,7 +476,12 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
     }
     const isReconnecting = get().reconnecting
     if (!isReconnecting) {
-      set({ lobbyPhase: 'joining', error: null, wins: [0, 0] })
+      set({
+        lobbyPhase: 'joining',
+        error: null,
+        wins: [0, 0],
+        lastWinnerIndex: null,
+      })
     }
     setUrlParam('join', code.toUpperCase())
 
@@ -483,13 +513,19 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       conn.on('data', (raw) => {
         const msg = raw as PeerMessage
         if (msg.type === 'game-start' || msg.type === 'new-game') {
-          onGameStartCallback?.(msg.seed, 1, msg.gameLength) // guest is always player 1
+          onGameStartCallback?.(
+            msg.seed,
+            1,
+            msg.gameLength,
+            msg.firstPlayerIndex,
+          ) // guest is always player 1
           set({
             gameCode: code.toUpperCase(),
             peerConnected: true,
             mode: 'multiplayer',
             showLobbyModal: false,
             wins: msg.wins,
+            lastWinnerIndex: msg.lastWinnerIndex,
           })
         } else if (msg.type === 'game-resume') {
           stopReconnecting()
@@ -501,6 +537,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
             mode: 'multiplayer',
             showLobbyModal: false,
             wins: msg.state.wins,
+            lastWinnerIndex: msg.state.lastWinnerIndex ?? null,
           })
         } else if (msg.type === 'move') {
           onRemoteMoveCallback?.(msg.move)
@@ -539,7 +576,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
     set((s) => {
       const wins: [number, number] = [...s.wins]
       wins[winnerIndex]++
-      return { wins }
+      return { wins, lastWinnerIndex: winnerIndex }
     })
   },
 
@@ -550,14 +587,22 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
   startNewGame: (gameLength: GameLength = 'medium') => {
     clearGameState()
     const seed = Date.now()
-    const wins = get().wins
+    const { wins, lastWinnerIndex } = get()
+    const isFirstGame = wins[0] === 0 && wins[1] === 0
+    const firstPlayerIndex: 0 | 1 = isFirstGame
+      ? Math.random() < 0.5
+        ? 0
+        : 1
+      : (lastWinnerIndex ?? (wins[0] >= wins[1] ? 0 : 1))
     conn?.send({
       type: 'new-game',
       seed,
       wins,
+      lastWinnerIndex,
+      firstPlayerIndex,
       gameLength,
     } satisfies PeerMessage)
-    onGameStartCallback?.(seed, 0, gameLength)
+    onGameStartCallback?.(seed, 0, gameLength, firstPlayerIndex)
   },
 
   disconnect: () => {
@@ -580,6 +625,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       gameCode: null,
       lobbyPhase: 'joining' as LobbyPhase,
       wins: [0, 0],
+      lastWinnerIndex: null,
     })
     onDisconnectCallback?.()
   },
