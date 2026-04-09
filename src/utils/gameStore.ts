@@ -759,6 +759,9 @@ const isValidPlay = (pile: CardType[], card: CardType): boolean => {
   // Neutral cards: can only be played where the top card has the same rank
   if (card.suit === NEUTRAL_SUIT)
     return topCard !== undefined && card.rank === topCard.rank
+  // Non-neutral card must match the suit of the first card already in the pile
+  const firstCard = pile[0]
+  if (firstCard && card.suit !== firstCard.suit) return false
   if (!topCard) return true
   if (card.rank === topCard.rank) return true
   const direction = getPileDirection(pile)
