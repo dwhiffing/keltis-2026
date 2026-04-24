@@ -751,6 +751,11 @@ const getPileFromPoint = (x: number, y: number) => {
 
 const isValidPlay = (pile: CardType[], card: CardType): boolean => {
   const topCard = pile.at(-1)
+  const firstCard = pile[0]
+  // Non-neutral card must match the suit of the first card already in the pile
+  if (firstCard && card.suit !== firstCard.suit && card.suit !== NEUTRAL_SUIT)
+    return false
+
   const pileHasEndCard = pile.some((c) => c.rank === END_CARD_RANK)
   // Once an end card is in the pile, only end cards can be played
   if (pileHasEndCard) return card.rank === END_CARD_RANK
@@ -759,9 +764,6 @@ const isValidPlay = (pile: CardType[], card: CardType): boolean => {
   // Neutral cards: can only be played where the top card has the same rank
   if (card.suit === NEUTRAL_SUIT)
     return topCard !== undefined && card.rank === topCard.rank
-  // Non-neutral card must match the suit of the first card already in the pile
-  const firstCard = pile[0]
-  if (firstCard && card.suit !== firstCard.suit) return false
   if (!topCard) return true
   if (card.rank === topCard.rank) return true
   const direction = getPileDirection(pile)

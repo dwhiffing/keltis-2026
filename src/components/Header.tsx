@@ -4,7 +4,7 @@ import { Dropdown } from './Dropdown'
 import { HamburgerSVG } from './svg'
 
 export function Header() {
-  const newGame = useGameStore((s) => s.newGame)
+  // const newGame = useGameStore((s) => s.newGame)
   const openInstructions = useGameStore((s) => s.openInstructions)
   const { mode, openLobby, disconnect, showNetworkDebug, toggleNetworkDebug } =
     useMultiplayerStore()
@@ -41,10 +41,10 @@ export function Header() {
                     label: 'Join Game',
                     onClick: () => openLobby('joining'),
                   },
-                  {
-                    label: 'Local Game vs AI',
-                    onClick: () => newGame(),
-                  },
+                  // {
+                  //   label: 'Local Game vs AI',
+                  //   onClick: () => newGame(),
+                  // },
                 ]
               : []),
             ...(mode === 'multiplayer'

@@ -127,11 +127,11 @@ function App() {
           onClick={() => openLobby('joining')}>
           Join Game
         </button>
-        <button
+        {/* <button
           className="button font-medium px-4 py-3"
           onClick={state.newGame}>
           Local Game vs AI
-        </button>
+        </button> */}
       </div>
 
       <InstructionsModal />
